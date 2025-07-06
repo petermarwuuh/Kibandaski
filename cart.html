@@ -1,0 +1,272 @@
+<!DOCTYPE html>  <html lang="en">  
+<head>  
+  <meta charset="UTF-8" />  
+  <meta name="viewport" content="width=device-width, initial-scale=1" />  
+  <title>My Cart - Kibandaski Deliveries</title>  
+  <link rel="stylesheet" href="style.css" />  
+  <link rel="preconnect" href="https://fonts.googleapis.com" />  
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />  
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;800&display=swap" rel="stylesheet" />  
+  <style>  
+    .cart-item {  
+      display: flex;  
+      align-items: center;  
+      margin: 10px 0;  
+      justify-content: space-between;  
+      flex-wrap: wrap;  
+    }  
+    .cart-img {  
+      width: 80px;  
+      height: 80px;  
+      object-fit: cover;  
+      margin-right: 15px;  
+      border-radius: 10px;  
+    }  
+    .cart-info {  
+      flex-grow: 1;  
+      margin-right: 10px;  
+    }  
+    .quantity-control {  
+      display: flex;  
+      align-items: center;  
+      gap: 10px;  
+    }  
+    .quantity-control button {  
+      padding: 4px 10px;  
+      font-size: 16px;  
+      font-weight: bold;  
+      cursor: pointer;  
+    }  
+    .remove-btn {  
+      background-color: #ff4d4d;  
+      border: none;  
+      color: white;  
+      padding: 6px 12px;  
+      border-radius: 5px;  
+      cursor: pointer;  
+      font-weight: bold;  
+    }  
+    .cart-summary {  
+      margin-top: 20px;  
+      font-size: 18px;  
+      font-weight: bold;  
+    }  
+    .checkout-btn {  
+      margin-top: 10px;  
+      padding: 10px 20px;  
+      background-color: green;  
+      color: white;  
+      border: none;  
+      border-radius: 5px;  
+      cursor: pointer;  
+    }  
+    .toast {  
+      position: fixed;  
+      bottom: 20px;  
+      right: 20px;  
+      background: #444;  
+      color: #fff;  
+      padding: 10px 20px;  
+      border-radius: 8px;  
+      opacity: 0.9;  
+      z-index: 1000;  
+    }  
+    @media (max-width: 600px) {  
+      .cart-item {  
+        flex-direction: column;  
+        align-items: flex-start;  
+      }  
+      .cart-img {  
+        width: 100%;  
+        height: auto;  
+        margin-bottom: 10px;  
+      }  
+      .checkout-btn {  
+        width: 100%;  
+      }  
+    }  
+  </style>  
+</head>  
+<body>  <div id="loading">Loading cart...</div>  <!-- Sidebar -->  <div class="sidebar">  
+  <h1 class="logo">DineDash</h1>  
+  <div class="sidebar-menus">  
+    <a href="index.html"><ion-icon name="storefront-outline"></ion-icon>Home</a>  
+    <a href="bills.html"><ion-icon name="receipt-outline"></ion-icon>Bills</a>  
+    <a href="#"><ion-icon name="wallet-outline"></ion-icon>Wallet</a>  
+    <a href="#"><ion-icon name="notifications-outline"></ion-icon>Notifications</a>  
+    <a href="#"><ion-icon name="chatbubbles-outline"></ion-icon>Contact Us</a>  
+    <a href="add-food.html"><ion-icon name="shield-checkmark-outline"></ion-icon>Admin</a>  
+  </div>  
+  <div class="sidebarlogout">  
+    <a href="#"><ion-icon name="log-out-outline"></ion-icon>Logout</a>  
+  </div>  
+</div>  <!-- Main Section -->  <div class="main">  
+  <div class="main-navbar">  
+    <ion-icon class="menu-toggle" name="menu-outline"></ion-icon>  
+    <div class="profile">  
+      <a class="cart" href="#"><ion-icon name="cart-outline"></ion-icon></a>  
+      <a class="user" href="#"><ion-icon name="person-outline"></ion-icon></a>  
+    </div>  
+  </div>  
+  <div class="main-detal">  
+    <h2 class="main-title">My Cart</h2>  
+    <p id="item-count"></p>  
+    <div class="cart-wrapper"></div>  <div class="cart-summary">  
+  <h3 id="cart-total">Total: Ksh. 0</h3>  
+  <p class="note">Estimated Delivery: 30–45 mins</p>  
+  <button class="checkout-btn" onclick="window.location.href='checkout.html'">Proceed to Checkout</button>  
+</div>
+
+  </div>  
+</div>  <!-- Ionicons -->  <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>  <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>  <script type="module">  
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";  
+  import {  
+    getFirestore, doc, getDoc, updateDoc  
+  } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";  
+  
+  const firebaseConfig = {  
+    apiKey: "AIzaSyAHhmbgDA_D13LcnEWgtr5Unu7uihBpGPE",  
+    authDomain: "food-ae7ff.firebaseapp.com",  
+    projectId: "food-ae7ff",  
+    storageBucket: "food-ae7ff.appspot.com",  
+    messagingSenderId: "1058214228504",  
+    appId: "1:1058214228504:web:f1f059be00c9aeaf7cc96d"  
+  };  
+  
+  const app = initializeApp(firebaseConfig);  
+  const db = getFirestore(app);  
+  const cartId = localStorage.getItem("cartId");  
+  
+  const showToast = (msg) => {  
+    const toast = document.createElement("div");  
+    toast.className = "toast";  
+    toast.innerText = msg;  
+    document.body.appendChild(toast);  
+    setTimeout(() => toast.remove(), 3000);  
+  };  
+  
+  const calculateDeliveryFee = (subtotal) => {  
+    if (subtotal <= 100) return 15;  
+    const extra = subtotal - 100;  
+    const steps = Math.floor(extra / 10);  
+    return 15 + steps * 2;  
+  };  
+  
+  const loadCart = async () => {  
+    const cartWrapper = document.querySelector(".cart-wrapper");  
+    const loading = document.getElementById("loading");  
+    cartWrapper.innerHTML = "";  
+    loading.style.display = "block";  
+  
+    const cartRef = doc(db, "carts", cartId);  
+    const cartSnap = await getDoc(cartRef);  
+  
+    let total = 0;  
+  
+    if (cartSnap.exists()) {  
+      const items = cartSnap.data().items || [];  
+  
+      if (items.length === 0) {  
+        cartWrapper.innerHTML = "<p>Your cart is empty.</p>";  
+      }  
+  
+      items.forEach((food, index) => {  
+        const quantity = food.quantity || 1;  
+        const price = Number(food.price) * quantity;  
+        total += price;  
+  
+        cartWrapper.innerHTML += `  
+          <div class="cart-item">  
+            <img src="${food.imageUrl}" alt="${food.name}" class="cart-img" />  
+            <div class="cart-info">  
+              <h4>${food.name}</h4>  
+              <p>Price: Ksh. ${food.price} x ${quantity} = <strong>Ksh. ${price}</strong></p>  
+              <div class="quantity-control">  
+                <button class="decrease" data-index="${index}">-</button>  
+                <span>${quantity}</span>  
+                <button class="increase" data-index="${index}">+</button>  
+              </div>  
+            </div>  
+            <button class="remove-btn" data-index="${index}">Remove</button>  
+          </div>  
+        `;  
+      });  
+  
+      // Event listeners  
+      document.querySelectorAll(".remove-btn").forEach(button => {  
+        button.addEventListener("click", async (e) => {  
+          const idx = e.target.getAttribute("data-index");  
+          if (confirm("Remove this item from the cart?")) {  
+            items.splice(idx, 1);  
+            await updateDoc(cartRef, { items });  
+            showToast("Item removed");  
+            loadCart();  
+          }  
+        });  
+      });  
+  
+      document.querySelectorAll(".increase").forEach(button => {  
+        button.addEventListener("click", async (e) => {  
+          const idx = e.target.getAttribute("data-index");  
+          items[idx].quantity = (items[idx].quantity || 1) + 1;  
+          await updateDoc(cartRef, { items });  
+          showToast("Quantity increased");  
+          loadCart();  
+        });  
+      });  
+  
+      document.querySelectorAll(".decrease").forEach(button => {  
+        button.addEventListener("click", async (e) => {  
+          const idx = e.target.getAttribute("data-index");  
+          if ((items[idx].quantity || 1) > 1) {  
+            items[idx].quantity -= 1;  
+            await updateDoc(cartRef, { items });  
+            showToast("Quantity decreased");  
+            loadCart();  
+          }  
+        });  
+      });  
+  
+      document.getElementById("item-count").innerText = `${items.length} items`;  
+    }  
+  
+    const deliveryFee = calculateDeliveryFee(total);  
+    const totalWithDelivery = total + deliveryFee;  
+  
+    document.getElementById("cart-total").innerText = `Ksh. ${total} + Delivery (${deliveryFee}) = Ksh. ${totalWithDelivery}`;  
+  
+    // Store for checkout  
+    localStorage.setItem("deliveryFee", deliveryFee);  
+    localStorage.setItem("subtotal", total);  
+    localStorage.setItem("grandTotal", totalWithDelivery);  
+  
+    loading.style.display = "none";  
+  };  
+  
+  window.addEventListener("DOMContentLoaded", loadCart);  
+</script>  <script>  
+  document.addEventListener("DOMContentLoaded", () => {  
+    const menuToggle = document.querySelector(".menu-toggle");  
+    const sidebar = document.querySelector(".sidebar");  
+  
+    menuToggle.addEventListener("click", (e) => {  
+      e.stopPropagation();  
+      sidebar.classList.toggle("active");  
+    });  
+  
+    document.addEventListener("click", (e) => {  
+      if (!sidebar.contains(e.target) && !menuToggle.contains(e.target)) {  
+        sidebar.classList.remove("active");  
+      }  
+    });  
+  
+    sidebar.addEventListener("click", (e) => {  
+      if (e.target.tagName === "A") {  
+        sidebar.classList.remove("active");  
+      } else {  
+        e.stopPropagation();  
+      }  
+    });  
+  });  
+</script>  </body>  
+  </html> 

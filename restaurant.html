@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Vendor Menu</title>
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- Firebase -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
+    import {
+      getFirestore, collection, getDocs
+    } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAHhmbgDA_D13LcnEWgtr5Unu7uihBpGPE",
+      authDomain: "food-ae7ff.firebaseapp.com",
+      projectId: "food-ae7ff",
+      storageBucket: "food-ae7ff.appspot.com",
+      messagingSenderId: "1058214228504",
+      appId: "1:1058214228504:web:f1f059be00c9aeaf7cc96d"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const params = new URLSearchParams(window.location.search);
+    const restaurantName = params.get("name");
+
+    let allFoods = [];
+
+    const renderFoods = (foods) => {
+      const menuWrapper = document.getElementById("restaurant-menu");
+      menuWrapper.innerHTML = "";
+
+      if (foods.length === 0) {
+        document.getElementById("vendor-title").innerText = `No items found for ${restaurantName}`;
+        return;
+      }
+
+      document.getElementById("vendor-title").innerText = `${restaurantName}'s Menu`;
+
+      foods.forEach(({ docId, food }) => {
+        const card = document.createElement("div");
+        card.classList.add("detail-card");
+
+        card.innerHTML = `
+          <a href="food-details.html?id=${docId}" class="food-link" style="text-decoration:none; color:inherit;">
+            <img class="detail-img" src="${food.imageUrl}" alt="${food.name}">
+            <div class="detail-desc">
+              <div class="detail-name">
+                <h4>${food.name}</h4>
+                <p class="detail-sub">${food.description}</p>
+                <p class="price">Ksh. ${food.price}</p>
+                <p class="sold-by">Sold by ${restaurantName}</p>
+              </div>
+              <ion-icon class="detail-favourite" name="bookmark-outline"></ion-icon>
+            </div>
+          </a>
+        `;
+        menuWrapper.appendChild(card);
+      });
+    };
+
+    const loadVendorFoods = async () => {
+      const querySnapshot = await getDocs(collection(db, "foods"));
+      allFoods = [];
+
+      querySnapshot.forEach((doc) => {
+        const food = doc.data();
+        const restaurant = food.restaurant || "Unknown Vendor";
+
+        if (restaurant === restaurantName) {
+          allFoods.push({ docId: doc.id, food });
+        }
+      });
+
+      renderFoods(allFoods);
+    };
+
+    const handleSearch = (e) => {
+      const keyword = e.target.value.toLowerCase();
+      const filteredFoods = allFoods.filter(({ food }) =>
+        food.name.toLowerCase().includes(keyword) ||
+        food.description.toLowerCase().includes(keyword)
+      );
+      renderFoods(filteredFoods);
+    };
+
+    window.addEventListener("DOMContentLoaded", () => {
+      loadVendorFoods();
+      document.getElementById("search-input").addEventListener("input", handleSearch);
+    });
+  </script>
+
+  <!-- Ionicons -->
+  <script src="https://unpkg.com/ionicons@5.5.2/dist/ionicons.js"></script>
+
+  <style>
+    .restaurant-container {
+      padding: 2rem;
+    }
+
+    .restaurant-title {
+      font-size: 2rem;
+      font-weight: bold;
+      margin-bottom: 1rem;
+    }
+
+    .search-bar {
+      margin-bottom: 1.5rem;
+    }
+
+    #search-input {
+      padding: 10px;
+      width: 100%;
+      max-width: 500px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+
+    .detail-card {
+      background-color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      padding: 1rem;
+      margin: 1rem 0;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .detail-img {
+      width: 100px;
+      height: 100px;
+      object-fit: cover;
+      border-radius: 10px;
+    }
+
+    .detail-desc {
+      flex: 1;
+    }
+
+    .detail-name h4 {
+      margin: 0;
+      font-size: 1.2rem;
+    }
+
+    .detail-sub {
+      color: gray;
+      font-size: 0.9rem;
+    }
+
+    .price {
+      font-weight: bold;
+      color: green;
+    }
+
+    .sold-by {
+      font-size: 0.8rem;
+      color: #666;
+    }
+
+    .detail-favourite {
+      font-size: 1.4rem;
+      color: #f39c12;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <h1 class="logo">DineDash</h1>
+    <div class="sidebar-menus">
+      <a href="index.html"><ion-icon name="storefront-outline"></ion-icon>Home</a>
+      <a href="bills.html"><ion-icon name="receipt-outline"></ion-icon>Bills</a>
+      <a href="#"><ion-icon name="wallet-outline"></ion-icon>Wallet</a>
+      <a href="#"><ion-icon name="notifications-outline"></ion-icon>Notifications</a>
+      <a href="#"><ion-icon name="chatbubbles-outline"></ion-icon>Contact Us</a>
+      <a href="add-food.html"><ion-icon name="shield-checkmark-outline"></ion-icon>Admin</a>
+      <a href="#"><ion-icon name="log-out-outline"></ion-icon>Logout</a>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main">
+    <!-- Navbar -->
+    <div class="main-navbar">
+      <ion-icon class="menu-toggle" name="menu-outline"></ion-icon>
+      <div class="profile">
+        <a class="cart" href="cart.html"><ion-icon name="cart-outline"></ion-icon></a>
+        <a class="user" href="auth.html"><ion-icon name="person-outline"></ion-icon></a>
+      </div>
+    </div>
+
+    <!-- Vendor Menu Content -->
+    <div class="restaurant-container">
+      <div class="restaurant-title" id="vendor-title">Loading vendor's menu...</div>
+      <div class="search-bar">
+        <input type="text" id="search-input" placeholder="Search food by name or description..." />
+      </div>
+      <div id="restaurant-menu"></div>
+    </div>
+  </div>
+</body>
+        </html>

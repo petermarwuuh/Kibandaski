@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kibandaski Deliveries</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="sidebar">
+    <h1 class="logo">DineDash</h1>
+    <div class="sidebar-menus">
+      <a href="index.html"><ion-icon name="storefront-outline"></ion-icon>Home</a>
+      <a href="admin-orders.html"><ion-icon name="receipt-outline"></ion-icon>Bills</a>
+      <a href="#"><ion-icon name="wallet-outline"></ion-icon>Wallet</a>
+      <a href="#"><ion-icon name="notifications-outline"></ion-icon>Notifications</a>
+      <a href="#"><ion-icon name="chatbubbles-outline"></ion-icon>Contact Us</a>
+      <a href="add-food.html"><ion-icon name="shield-checkmark-outline"></ion-icon>admin</a>
+       <a href="#"><ion-icon name="log-out-outline"></ion-icon>Logout</a>
+    </div>
+    <div class="sidebarlogout">
+
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="main-navbar">
+      <ion-icon class="menu-toggle" name="menu-outline"></ion-icon>
+      <div class="search">
+        <input id="searchInput" type="text" placeholder="Unataka kukula nini?" />
+        <button class="search-btn">Search</button>
+      </div>
+      <div class="profile">
+        <a class="cart" href="cart.html"><ion-icon name="cart-outline"></ion-icon></a>
+        <a class="user" href="auth.html"><ion-icon name="person-outline"></ion-icon></a>
+      </div>
+    </div>
+
+    <!-- ✅ CLEANED UP RECOMMENDATIONS SECTION INSERTED HERE -->
+    <div class="main-highlight">
+      <div class="main-header">
+        <h2 class="main-title">Recommendations</h2>
+        <div class="main-arrow">
+          <ion-icon class="back" name="chevron-back-circle-outline"></ion-icon>
+          <ion-icon class="next" name="chevron-forward-circle-outline"></ion-icon>
+        </div>
+      </div>
+      <div class="highlight-container">
+        <div class="highlight-wrapper" id="highlightSlider">
+          <!-- Random recommended foods will be added here -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ✅ MENU SECTION -->
+    <div class="main-menus">
+      <div class="main-filter">
+        <h2 class="main-title">Menu Category</h2>
+        <div class="main-arrow">
+          <ion-icon class="back-menus" name="chevron-back-circle-outline"></ion-icon>
+          <ion-icon class="next-menus" name="chevron-forward-circle-outline"></ion-icon>
+        </div>
+        <div class="filter-wrapper">
+          <div class="filter-card">
+            <div class="filter-icon">
+              <ion-icon name="restaurant-outline"></ion-icon>
+            </div>
+            <p>All Menus</p>
+          </div>
+          <div class="filter-card">
+            <div class="filter-icon">
+              <ion-icon name="fast-food-outline"></ion-icon>
+            </div>
+            <p>Burger</p>
+          </div>
+          <div class="filter-card">
+            <div class="filter-icon">
+              <ion-icon name="pizza-outline"></ion-icon>
+            </div>
+            <p>Pizza</p>
+          </div>
+          <div class="filter-card">
+            <div class="filter-icon">
+              <ion-icon name="wine-outline"></ion-icon>
+            </div>
+            <p>Wine</p>
+          </div>
+          <div class="filter-card">
+            <div class="filter-icon">
+              <ion-icon name="ice-cream-outline"></ion-icon>
+            </div>
+            <p>Ice Cream</p>
+          </div>
+          <div class="filter-card">
+            <div class="filter-icon">
+              <ion-icon name="cafe-outline"></ion-icon>
+            </div>
+            <p>Kahawa</p>
+          </div>
+          <div class="filter-card">
+            <div class="filter-icon">
+              <ion-icon name="fish-outline"></ion-icon>
+            </div>
+            <p>Seafood</p>
+          </div>
+          <div class="filter-card">
+            <div class="filter-icon">
+              <ion-icon name="nutrition-outline"></ion-icon>
+            </div>
+            <p>Healthy</p>
+          </div>
+        </div>
+      </div>
+      <hr class="divider" />
+      <div class="main-detail">
+        <h2 class="main-title">Choose Order</h2>
+        <div class="detail-wrapper" id="menu-wrapper">
+          <!-- Food items will be dynamically inserted here -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ionicons -->
+  <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+  <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+
+  <!-- jQuery -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+  <!-- Custom JS -->
+  <script type="module" src="app.js"></script>
+</body>
+    </html>

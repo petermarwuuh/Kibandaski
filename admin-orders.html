@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Admin Orders - Kibandaski</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .order-card {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 1em;
+      margin: 1em 0;
+    }
+    .order-card h4 {
+      margin-bottom: 0.5em;
+    }
+    .order-actions button {
+      margin-right: 10px;
+    }
+    .status-badge {
+      display: inline-block;
+      padding: 0.25em 0.6em;
+      border-radius: 5px;
+      font-size: 0.9em;
+    }
+    .status-Pending { background-color: gray; color: white; }
+    .status-Taken { background-color: green; color: white; }
+    .status-Denied { background-color: red; color: white; }
+  </style>
+</head>
+<body>
+  <h2>Admin - Orders Management</h2>
+  <div id="ordersContainer"></div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyAHhmbgDA_D13LcnEWgtr5Unu7uihBpGPE",
+      authDomain: "food-ae7ff.firebaseapp.com",
+      projectId: "food-ae7ff",
+      storageBucket: "food-ae7ff.appspot.com",
+      messagingSenderId: "856889844830",
+      appId: "1:856889844830:web:b2234261c7df8c1e83203e"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    const ordersContainer = document.getElementById("ordersContainer");
+
+    function renderOrder(id, data) {
+      const div = document.createElement("div");
+      div.className = "order-card";
+      div.innerHTML = `
+        <h4>${data.fullName} - ${data.phone}</h4>
+        <p><strong>Address:</strong> ${data.address}</p>
+        <p><strong>Total:</strong> Ksh. ${data.grandTotal}</p>
+        <p><strong>Status:</strong> <span class="status-badge status-${data.status || 'Pending'}">${data.status || 'Pending'}</span></p>
+        <div class="order-actions">
+          <button onclick="updateStatus('${id}', 'Taken')">Mark as Taken</button>
+          <button onclick="updateStatus('${id}', 'Denied')">Deny</button>
+          <button onclick="updateStatus('${id}', 'Pending')">Set to Pending</button>
+        </div>
+      `;
+      ordersContainer.appendChild(div);
+    }
+
+    function loadOrders() {
+      db.collection("orders").orderBy("createdAt", "desc").onSnapshot((snapshot) => {
+        ordersContainer.innerHTML = "";
+        snapshot.forEach((doc) => {
+          renderOrder(doc.id, doc.data());
+        });
+      });
+    }
+
+    function updateStatus(orderId, newStatus) {
+      db.collection("orders").doc(orderId).update({
+        status: newStatus
+      }).then(() => {
+        alert("Order status updated to " + newStatus);
+      }).catch((error) => {
+        console.error("Error updating status:", error);
+        alert("Failed to update status.");
+      });
+    }
+
+    loadOrders();
+  </script>
+</body>
+</html>

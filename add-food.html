@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Manage Food Items</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    :root {
+      --primarycolor: #0e6253;
+      --secondarycolor: #ffc107;
+      --whitecolor: #fff;
+      --blackcolor: #222;
+      --softgreencolor: #d9f2ee;
+      --darkgreycolor: #a7a7a7;
+      --greycolor: #f5f5f5;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background-color: var(--softgreencolor);
+      color: var(--blackcolor);
+      margin: 0;
+      padding: 2rem;
+    }
+
+    h2 {
+      text-align: center;
+      color: var(--primarycolor);
+    }
+
+    form, .toggle-section {
+      background-color: var(--whitecolor);
+      padding: 2rem;
+      border-radius: 12px;
+      max-width: 600px;
+      margin: 1rem auto;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    input[type="text"], input[type="number"], select {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 1rem;
+      border: 1px solid var(--darkgreycolor);
+      border-radius: 8px;
+      font-size: 1rem;
+    }
+
+    button {
+      background-color: var(--primarycolor);
+      color: var(--whitecolor);
+      padding: 10px 16px;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    button:hover {
+      background-color: var(--secondarycolor);
+      color: var(--blackcolor);
+    }
+
+    .food-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--darkgreycolor);
+      padding: 0.5rem 0;
+    }
+
+    .food-info {
+      flex: 1;
+    }
+
+    .food-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .search-bar {
+      margin: 1rem 0;
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <h2>Add / Manage Foods</h2>
+
+  <form id="foodForm">
+    <input type="text" id="name" placeholder="Food Name" required />
+    <input type="text" id="description" placeholder="Description" required />
+    <input type="number" id="price" placeholder="Price (Ksh)" required />
+    <input type="text" id="imageUrl" placeholder="Image URL" required />
+    <select id="restaurant" required>
+      <option value="">Select Restaurant</option>
+      <option value="Erick">Erick</option>
+      <option value="Mama shamim">Mama Shamim</option>
+      <option value="Oxygen">Oxygen</option>
+      <option value="Zamzam">Zamzam</option>
+      <option value="Oguna">Oguna</option>
+      <option value="Rehoboth">Rehoboth</option>
+      <option value="Mums">Mums</option>
+      
+    </select>
+    <input type="hidden" id="editId" />
+    <button type="submit">Save Food</button>
+  </form>
+
+  <div class="toggle-section">
+    <button id="toggleBtn">View Foods</button>
+    <div id="foodSection" class="hidden">
+      <div class="search-bar">
+        <input type="text" id="search" placeholder="Search foods by name..." />
+      </div>
+      <div class="food-list" id="foodList"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAHhmbgDA_D13LcnEWgtr5Unu7uihBpGPE",
+      authDomain: "food-ae7ff.firebaseapp.com",
+      projectId: "food-ae7ff",
+      storageBucket: "food-ae7ff.appspot.com",
+      messagingSenderId: "1058214228504",
+      appId: "1:1058214228504:web:f1f059be00c9aeaf7cc96d"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const foodCol = collection(db, "foods");
+
+    const form = document.getElementById("foodForm");
+    const foodList = document.getElementById("foodList");
+    const searchInput = document.getElementById("search");
+    const toggleBtn = document.getElementById("toggleBtn");
+    const foodSection = document.getElementById("foodSection");
+
+    // Toggle food list section
+    toggleBtn.addEventListener("click", () => {
+      foodSection.classList.toggle("hidden");
+      toggleBtn.textContent = foodSection.classList.contains("hidden") ? "View Foods" : "Hide Foods";
+    });
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const name = form.name.value.trim();
+      const description = form.description.value.trim();
+      const price = parseFloat(form.price.value);
+      const imageUrl = form.imageUrl.value.trim();
+      const restaurant = form.restaurant.value;
+      const editId = form.editId.value;
+
+      if (!name || !description || !price || !imageUrl || !restaurant) return alert("Please fill all fields.");
+      try { new URL(imageUrl); } catch { return alert("Invalid image URL."); }
+
+      if (editId) {
+        await updateDoc(doc(db, "foods", editId), { name, description, price, imageUrl, restaurant });
+        alert("✅ Food updated.");
+      } else {
+        await addDoc(foodCol, { name, description, price, imageUrl, restaurant });
+        alert("✅ Food added.");
+      }
+      form.reset();
+    });
+
+    const renderFoods = (foods) => {
+      foodList.innerHTML = "";
+      foods.forEach(docData => {
+        const data = docData.data();
+        const item = document.createElement("div");
+        item.className = "food-item";
+        item.innerHTML = `
+          <div class="food-info">
+            <strong>${data.name}</strong> - ${data.restaurant}<br />
+            Ksh ${data.price} - ${data.description}
+          </div>
+          <div class="food-actions">
+            <button onclick="editFood('${docData.id}', '${data.name}', '${data.description}', ${data.price}, '${data.imageUrl}', '${data.restaurant}')">Edit</button>
+            <button onclick="deleteFood('${docData.id}')">Delete</button>
+          </div>
+        `;
+        foodList.appendChild(item);
+      });
+    };
+
+    window.editFood = (id, name, description, price, imageUrl, restaurant) => {
+      form.name.value = name;
+      form.description.value = description;
+      form.price.value = price;
+      form.imageUrl.value = imageUrl;
+      form.restaurant.value = restaurant;
+      form.editId.value = id;
+    };
+
+    window.deleteFood = async (id) => {
+      if (confirm("Are you sure you want to delete this food item?")) {
+        await deleteDoc(doc(db, "foods", id));
+        alert("Deleted.");
+      }
+    };
+
+    let foodSnapshot = [];
+
+    const updateDisplay = () => {
+      const term = searchInput.value.toLowerCase();
+      const filtered = foodSnapshot.filter(doc => doc.data().name.toLowerCase().includes(term));
+      renderFoods(filtered);
+    };
+
+    searchInput.addEventListener("input", updateDisplay);
+
+    onSnapshot(foodCol, (snapshot) => {
+      foodSnapshot = snapshot.docs;
+      updateDisplay();
+    });
+  </script>
+</body>
+</html>

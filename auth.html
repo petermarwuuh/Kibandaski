@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Kibandaski Deliveries - Auth</title>
+ <link rel="stylesheet" href="style.css"> 
+  <style>
+    :root {
+      --primarycolor: #0e6253;
+      --secondarycolor: #ffc107;
+      --whitecolor: #fff;
+      --blackcolor: #222;
+      --softgreencolor: #d9f2ee;
+      --darkgreycolor: #a7a7a7;
+      --greycolor: #f5f5f5;
+    }
+
+    body {
+      font-family: 'Open Sans', sans-serif;
+      background-color: var(--greycolor);
+      margin: 0;
+      padding: 0;
+    }
+
+    .form-container {
+      background: var(--softgreencolor);
+      max-width: 400px;
+      margin: 3rem auto;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    .form-container h2 {
+      text-align: center;
+      color: var(--primarycolor);
+    }
+
+    .form-container input,
+    .form-container button {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border: 1px solid var(--darkgreycolor);
+      border-radius: 8px;
+      font-size: 1rem;
+    }
+
+    .form-container button {
+      background-color: var(--primarycolor);
+      color: var(--whitecolor);
+      border: none;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    .form-container button:hover {
+      background-color: var(--secondarycolor);
+      color: var(--blackcolor);
+    }
+
+    .toggle-link {
+      text-align: center;
+      color: var(--primarycolor);
+      cursor: pointer;
+      margin-top: 1rem;
+      text-decoration: underline;
+    }
+
+    #authStatus {
+      text-align: center;
+      margin-top: 1rem;
+    }
+  </style>
+</head>
+<body>
+<div class="sidebar">
+        <h1 class="logo">DineDash</h1>
+        <div class="sidebar-menus">
+            <a href="index.html"><ion-icon name="storefront-outline"></ion-icon>Home</a>
+            <a href="bills.html"><ion-icon name="receipt-outline"></ion-icon>Bills</a>
+            <a href="#"><ion-icon name="wallet-outline"></ion-icon>Wallet</a>
+            <a href="#"><ion-icon name="notifications-outline"></ion-icon>Notifications</a>
+            <a href="#"><ion-icon name="chatbubbles-outline"></ion-icon>Contact Us</a>
+            <a href="add-food.html"><ion-icon name="shield-checkmark-outline"></ion-icon>admin</a>
+            <a href="#"><ion-icon name="log-out-outline"></ion-icon>Logout</a>
+        </div>
+            <div class="sidebarlogout">
+      
+            </div>
+    </div>
+
+    <div class="main">
+        <div class="main-navbar">
+            <ion-icon class="menu-toggle" name="menu-outline"></ion-icon>
+            
+            <div class="profile">
+                <a class="cart" href="cart.html"><ion-icon name="cart-outline"></ion-icon></a>
+                <a class="user" href="auth.html"><ion-icon name="person-outline"></ion-icon></a>
+            </div>
+        </div>
+      
+  <div class="form-container">
+    <h2 id="formTitle">Login</h2>
+    <form id="authForm">
+      <input type="text" id="nameField" placeholder="Full Name" style="display: none;" />
+      <input type="email" id="emailField" placeholder="Email" required />
+      <input type="password" id="passwordField" placeholder="Password" required />
+      <button type="submit" id="submitButton">Login</button>
+    </form>
+    <div class="toggle-link" id="toggleLink">Don't have an account? Register</div>
+    <p id="authStatus"></p>
+  </div>
+<script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+
+    <!-- jQuery -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAHhmbgDA_D13LcnEWgtr5Unu7uihBpGPE",
+      authDomain: "food-ae7ff.firebaseapp.com",
+      projectId: "food-ae7ff",
+      storageBucket: "food-ae7ff.appspot.com",
+      messagingSenderId: "1058214228504",
+      appId: "1:1058214228504:web:f1f059be00c9aeaf7cc96d"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    const isRegister = { value: false }; // track state
+
+    const formTitle = document.getElementById("formTitle");
+    const nameField = document.getElementById("nameField");
+    const emailField = document.getElementById("emailField");
+    const passwordField = document.getElementById("passwordField");
+    const authForm = document.getElementById("authForm");
+    const submitButton = document.getElementById("submitButton");
+    const toggleLink = document.getElementById("toggleLink");
+    const authStatus = document.getElementById("authStatus");
+
+    toggleLink.addEventListener("click", () => {
+      isRegister.value = !isRegister.value;
+      if (isRegister.value) {
+        formTitle.textContent = "Register";
+        nameField.style.display = "block";
+        submitButton.textContent = "Register";
+        toggleLink.textContent = "Already have an account? Login";
+      } else {
+        formTitle.textContent = "Login";
+        nameField.style.display = "none";
+        submitButton.textContent = "Login";
+        toggleLink.textContent = "Don't have an account? Register";
+      }
+    });
+
+    authForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = emailField.value;
+      const password = passwordField.value;
+
+      if (isRegister.value) {
+        try {
+          await createUserWithEmailAndPassword(auth, email, password);
+          authStatus.textContent = "✅ Registered successfully!";
+          authStatus.style.color = "green";
+          authForm.reset();
+        } catch (error) {
+          authStatus.textContent = `❌ ${error.message}`;
+          authStatus.style.color = "red";
+        }
+      } else {
+        try {
+          await signInWithEmailAndPassword(auth, email, password);
+          authStatus.textContent = "✅ Logged in!";
+          authStatus.style.color = "green";
+          window.location.href = "index.html"; // redirect after login
+        } catch (error) {
+          authStatus.textContent = `❌ ${error.message}`;
+          authStatus.style.color = "red";
+        }
+      }
+    });
+  </script>
+      <script type="module" src="app.js"></script>
+</body>
+</html>
