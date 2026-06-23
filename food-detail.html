@@ -3,22 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Food Detail</title>
+  <title>Food Detail — Kibandaski</title>
   <link rel="stylesheet" href="style.css" />
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f5f5f5;
-      margin: 0;
-      padding: 20px;
-    }
-
-    .container {
+    .food-detail-page {
       max-width: 900px;
-      margin: auto;
+      margin: 0 auto;
+      padding: 1rem;
     }
-
-    /* Main Food Section */
     .main-food {
       background: #fff;
       border-radius: 10px;
@@ -26,34 +18,16 @@
       padding: 20px;
       margin-bottom: 40px;
     }
-
     .main-food img {
       width: 100%;
       max-height: 300px;
       object-fit: cover;
       border-radius: 8px;
     }
-
-    .main-food h1 {
-      margin-top: 20px;
-      font-size: 26px;
-    }
-
-    .main-food .desc {
-      color: #555;
-      margin: 10px 0;
-    }
-
-    .main-food .price {
-      font-size: 20px;
-      font-weight: bold;
-      color: #e67e22;
-    }
-
-    .buttons {
-      margin-top: 20px;
-    }
-
+    .main-food h1 { margin-top: 20px; font-size: 26px; }
+    .main-food .desc { color: #555; margin: 10px 0; }
+    .main-food .price { font-size: 20px; font-weight: bold; color: #e67e22; }
+    .buttons { margin-top: 20px; }
     .btn {
       padding: 10px 16px;
       border: none;
@@ -62,29 +36,14 @@
       font-size: 14px;
       margin-right: 10px;
     }
-
-    .btn-primary {
-      background-color: #27ae60;
-      color: white;
-    }
-
-    .btn-secondary {
-      background-color: #3498db;
-      color: white;
-    }
-
-    /* Other Vendors Section */
+    .btn-primary { background-color: #27ae60; color: white; }
+    .btn-secondary { background-color: #3498db; color: white; }
     .other-vendors {
       background: #fff;
       padding: 20px;
       border-radius: 10px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.1);
     }
-
-    .other-vendors h2 {
-      margin-bottom: 20px;
-    }
-
     .vendor-card {
       display: flex;
       gap: 15px;
@@ -95,87 +54,62 @@
       cursor: pointer;
       transition: background 0.2s ease;
     }
-
-    .vendor-card:hover {
-      background: #f0f0f0;
-    }
-
+    .vendor-card:hover { background: #f0f0f0; }
     .vendor-card img {
       width: 120px;
       height: 100px;
       object-fit: cover;
       border-radius: 6px;
     }
-
-    .vendor-info {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-    }
-
-    .vendor-info p {
-      margin: 4px 0;
-    }
-
-    .vendor-info .price {
-      color: #e67e22;
-      font-weight: bold;
+    .vendor-info { display: flex; flex-direction: column; justify-content: center; }
+    .vendor-info p { margin: 4px 0; }
+    .vendor-info .price { color: #e67e22; font-weight: bold; }
+    .back-link {
+      display: inline-block;
+      margin-bottom: 1rem;
+      color: var(--primarycolor);
+      text-decoration: none;
+      font-weight: 600;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <!-- Main Food Section -->
+  <div class="food-detail-page">
+    <a href="index.html" class="back-link">← Back to menu</a>
     <div class="main-food">
       <img id="food-img" src="" alt="Food Image" />
       <h1 id="food-title"></h1>
       <p class="desc" id="food-desc"></p>
       <p class="price" id="food-price"></p>
+      <p class="desc" id="food-vendor"></p>
       <div class="buttons">
         <button id="add-to-cart-btn" class="btn btn-primary">Add to Cart</button>
-        <button onclick="location.href='checkout.html'" class="btn btn-secondary">Checkout</button>
+        <button onclick="location.href='cart.html'" class="btn btn-secondary">View Cart</button>
       </div>
     </div>
-
-    <!-- Other Restaurants Section -->
     <div class="other-vendors">
-      <h2>Other restaurants selling this food:</h2>
+      <h2>Other vendors selling this food</h2>
       <div id="vendors-list"></div>
     </div>
   </div>
 
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
-    import {
-      getFirestore, doc, getDoc, collection, getDocs, query, where, setDoc, updateDoc, arrayUnion
-    } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+    import { doc, getDoc, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+    import { db } from "./js/firebase-config.js";
+    import { getOrCreateCartId, addItemToCart } from "./js/cart-utils.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyAHhmbgDA_D13LcnEWgtr5Unu7uihBpGPE",
-      authDomain: "food-ae7ff.firebaseapp.com",
-      projectId: "food-ae7ff",
-      storageBucket: "food-ae7ff.appspot.com",
-      messagingSenderId: "1058214228504",
-      appId: "1:1058214228504:web:f1f059be00c9aeaf7cc96d"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-    let cartId = localStorage.getItem("cartId");
-    if (!cartId) {
-      cartId = "cart_" + Math.random().toString(36).substring(2);
-      localStorage.setItem("cartId", cartId);
-    }
-
+    const cartId = getOrCreateCartId();
     const params = new URLSearchParams(window.location.search);
     const foodId = params.get("id");
     let currentFood = null;
 
     const loadFoodDetail = async () => {
-      const foodRef = doc(db, "foods", foodId);
-      const foodSnap = await getDoc(foodRef);
+      if (!foodId) {
+        document.getElementById("food-title").innerText = "No food selected";
+        return;
+      }
 
+      const foodSnap = await getDoc(doc(db, "foods", foodId));
       if (!foodSnap.exists()) {
         document.getElementById("food-title").innerText = "Food not found";
         return;
@@ -188,6 +122,7 @@
       document.getElementById("food-title").innerText = food.name;
       document.getElementById("food-desc").innerText = food.description;
       document.getElementById("food-price").innerText = "Ksh. " + food.price;
+      document.getElementById("food-vendor").innerText = "Sold by " + (food.restaurant || "Local Kibanda");
 
       loadOtherVendors(food.name);
     };
@@ -198,13 +133,13 @@
       const list = document.getElementById("vendors-list");
       list.innerHTML = "";
 
-      querySnapshot.forEach(docSnap => {
-        if (docSnap.id === foodId) return; // skip current food
-
+      let found = false;
+      querySnapshot.forEach((docSnap) => {
+        if (docSnap.id === foodId) return;
+        found = true;
         const food = docSnap.data();
         const card = document.createElement("div");
-        card.classList.add("vendor-card");
-
+        card.className = "vendor-card";
         card.innerHTML = `
           <img src="${food.imageUrl}" alt="Food image" />
           <div class="vendor-info">
@@ -212,37 +147,24 @@
             <p class="price">Ksh. ${food.price}</p>
           </div>
         `;
-
         card.addEventListener("click", () => {
           location.href = `food-detail.html?id=${docSnap.id}`;
         });
-
         list.appendChild(card);
       });
-    };
 
-    const addToCart = async () => {
-      if (!currentFood) return;
-      const cartRef = doc(db, "carts", cartId);
-      const cartSnap = await getDoc(cartRef);
-
-      if (cartSnap.exists()) {
-        await updateDoc(cartRef, {
-          items: arrayUnion(currentFood)
-        });
-      } else {
-        await setDoc(cartRef, {
-          items: [currentFood]
-        });
+      if (!found) {
+        list.innerHTML = "<p>No other vendors found for this item.</p>";
       }
-
-      alert("✅ Added to cart!");
     };
 
-    document.addEventListener("DOMContentLoaded", () => {
-      loadFoodDetail();
-      document.getElementById("add-to-cart-btn").addEventListener("click", addToCart);
+    document.getElementById("add-to-cart-btn").addEventListener("click", async () => {
+      if (!currentFood) return;
+      await addItemToCart(cartId, currentFood);
+      alert("Added to cart!");
     });
+
+    loadFoodDetail();
   </script>
 </body>
 </html>

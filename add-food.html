@@ -89,7 +89,8 @@
   </style>
 </head>
 <body>
-  <h2>Add / Manage Foods</h2>
+  <h2>Kibandaski — Add / Manage Foods</h2>
+  <p style="text-align:center;"><a href="index.html">← Back to home</a> | <a href="admin-orders.html">View orders</a></p>
 
   <form id="foodForm">
     <input type="text" id="name" placeholder="Food Name" required />
@@ -105,7 +106,16 @@
       <option value="Oguna">Oguna</option>
       <option value="Rehoboth">Rehoboth</option>
       <option value="Mums">Mums</option>
-      
+    </select>
+    <select id="category" required>
+      <option value="">Select Category</option>
+      <option value="Kuku">Kuku</option>
+      <option value="Nyama">Nyama</option>
+      <option value="Chapati">Chapati</option>
+      <option value="Ugali">Ugali</option>
+      <option value="Kahawa">Kahawa</option>
+      <option value="Samaki">Samaki</option>
+      <option value="Healthy">Healthy</option>
     </select>
     <input type="hidden" id="editId" />
     <button type="submit">Save Food</button>
@@ -122,20 +132,8 @@
   </div>
 
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyAHhmbgDA_D13LcnEWgtr5Unu7uihBpGPE",
-      authDomain: "food-ae7ff.firebaseapp.com",
-      projectId: "food-ae7ff",
-      storageBucket: "food-ae7ff.appspot.com",
-      messagingSenderId: "1058214228504",
-      appId: "1:1058214228504:web:f1f059be00c9aeaf7cc96d"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+    import { collection, addDoc, onSnapshot, doc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+    import { db } from "./js/firebase-config.js";
     const foodCol = collection(db, "foods");
 
     const form = document.getElementById("foodForm");
@@ -157,16 +155,17 @@
       const price = parseFloat(form.price.value);
       const imageUrl = form.imageUrl.value.trim();
       const restaurant = form.restaurant.value;
+      const category = form.category.value;
       const editId = form.editId.value;
 
-      if (!name || !description || !price || !imageUrl || !restaurant) return alert("Please fill all fields.");
+      if (!name || !description || !price || !imageUrl || !restaurant || !category) return alert("Please fill all fields.");
       try { new URL(imageUrl); } catch { return alert("Invalid image URL."); }
 
       if (editId) {
-        await updateDoc(doc(db, "foods", editId), { name, description, price, imageUrl, restaurant });
+        await updateDoc(doc(db, "foods", editId), { name, description, price, imageUrl, restaurant, category });
         alert("✅ Food updated.");
       } else {
-        await addDoc(foodCol, { name, description, price, imageUrl, restaurant });
+        await addDoc(foodCol, { name, description, price, imageUrl, restaurant, category });
         alert("✅ Food added.");
       }
       form.reset();
@@ -180,24 +179,28 @@
         item.className = "food-item";
         item.innerHTML = `
           <div class="food-info">
-            <strong>${data.name}</strong> - ${data.restaurant}<br />
+            <strong>${data.name}</strong> - ${data.restaurant} (${data.category || "Uncategorized"})<br />
             Ksh ${data.price} - ${data.description}
           </div>
           <div class="food-actions">
-            <button onclick="editFood('${docData.id}', '${data.name}', '${data.description}', ${data.price}, '${data.imageUrl}', '${data.restaurant}')">Edit</button>
+            <button class="edit-btn" data-id="${docData.id}">Edit</button>
             <button onclick="deleteFood('${docData.id}')">Delete</button>
           </div>
         `;
         foodList.appendChild(item);
+        item.querySelector(".edit-btn").addEventListener("click", () => {
+          editFood(docData.id, data);
+        });
       });
     };
 
-    window.editFood = (id, name, description, price, imageUrl, restaurant) => {
-      form.name.value = name;
-      form.description.value = description;
-      form.price.value = price;
-      form.imageUrl.value = imageUrl;
-      form.restaurant.value = restaurant;
+    const editFood = (id, data) => {
+      form.name.value = data.name;
+      form.description.value = data.description;
+      form.price.value = data.price;
+      form.imageUrl.value = data.imageUrl;
+      form.restaurant.value = data.restaurant;
+      form.category.value = data.category || "";
       form.editId.value = id;
     };
 
