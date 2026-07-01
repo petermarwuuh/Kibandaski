@@ -176,7 +176,7 @@
               );
               const resText = await verify.text();
               alert("Payment successful! " + resText);
-              window.location.href = "bills.html";
+              window.location.href = `order-track.html?id=${orderId}`;
             } catch (err) {
               alert("Payment received but verification failed: " + err.message);
             }

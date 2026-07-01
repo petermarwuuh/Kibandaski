@@ -1,20 +1,17 @@
 import { collection, getDocs } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
 import { db } from "./firebase-config.js";
+import { toggleFavorite, isFavorite } from "./favorites-utils.js";
+import { renderStars } from "./ratings-utils.js";
+import { initAuthState } from "./auth-utils.js";
 
 const CATEGORIES = [
-  "All Menus",
-  "Kuku",
-  "Nyama",
-  "Chapati",
-  "Ugali",
-  "Kahawa",
-  "Samaki",
-  "Healthy"
+  "All Menus", "Kuku", "Nyama", "Chapati", "Ugali", "Kahawa", "Samaki", "Healthy"
 ];
 
 let allFoods = [];
 let activeCategory = "All Menus";
 let searchQuery = "";
+let favoriteIds = new Set();
 
 function shuffle(array) {
   const copy = [...array];
@@ -27,28 +24,52 @@ function shuffle(array) {
 
 function escapeHtml(text) {
   const div = document.createElement("div");
-  div.textContent = text;
+  div.textContent = text ?? "";
   return div.innerHTML;
+}
+
+async function refreshFavorites() {
+  const { getFavoriteIds } = await import("./favorites-utils.js");
+  favoriteIds = new Set(await getFavoriteIds());
 }
 
 function createFoodCard(food) {
   const card = document.createElement("div");
   card.className = "detail-card";
+  const favActive = favoriteIds.has(food.id) ? "active" : "";
   card.innerHTML = `
     <img class="detail-img" src="${escapeHtml(food.imageUrl)}" alt="${escapeHtml(food.name)}" loading="lazy" />
     <div class="detail-desc">
       <div class="detail-name">
         <h4>${escapeHtml(food.name)}</h4>
+        <p class="rating">${renderStars(food.avgRating || 0)} <span class="rating-count">(${food.ratingCount || 0})</span></p>
         <p class="detail-sub">${escapeHtml(food.description)}</p>
         <p class="price">Ksh. ${food.price}</p>
         <p class="detail-sub">Sold by ${escapeHtml(food.restaurant || "Local Kibanda")}</p>
       </div>
-      <ion-icon class="detail-favourite" name="bookmark-outline"></ion-icon>
+      <button class="fav-btn ${favActive}" data-id="${food.id}" aria-label="Favourite">
+        <ion-icon name="${favActive ? "heart" : "heart-outline"}"></ion-icon>
+      </button>
     </div>
   `;
-  card.addEventListener("click", () => {
+
+  card.querySelector(".detail-name").addEventListener("click", () => {
     window.location.href = `food-detail.html?id=${food.id}`;
   });
+  card.querySelector(".detail-img").addEventListener("click", () => {
+    window.location.href = `food-detail.html?id=${food.id}`;
+  });
+
+  card.querySelector(".fav-btn").addEventListener("click", async (e) => {
+    e.stopPropagation();
+    const added = await toggleFavorite(food);
+    const btn = e.currentTarget;
+    btn.classList.toggle("active", added);
+    btn.querySelector("ion-icon").setAttribute("name", added ? "heart" : "heart-outline");
+    if (added) favoriteIds.add(food.id);
+    else favoriteIds.delete(food.id);
+  });
+
   return card;
 }
 
@@ -60,6 +81,7 @@ function createHighlightCard(food) {
     <img class="highlight-img" src="${escapeHtml(food.imageUrl)}" alt="${escapeHtml(food.name)}" loading="lazy" />
     <div>
       <h4>${escapeHtml(food.name)}</h4>
+      <p class="rating">${renderStars(food.avgRating || 0)}</p>
       <p class="price">Ksh. ${food.price}</p>
       <p class="detail-sub">${escapeHtml(food.restaurant || "")}</p>
     </div>
@@ -117,9 +139,8 @@ function renderVendors() {
 
   const vendors = [...new Set(allFoods.map((f) => f.restaurant).filter(Boolean))];
   vendorSection.innerHTML = vendors
-    .map(
-      (name) =>
-        `<a href="restaurant.html?name=${encodeURIComponent(name)}" class="vendor-chip">${escapeHtml(name)}</a>`
+    .map((name) =>
+      `<a href="restaurant.html?name=${encodeURIComponent(name)}" class="vendor-chip">${escapeHtml(name)}</a>`
     )
     .join("");
 }
@@ -128,9 +149,7 @@ function setupCategoryFilters() {
   const filterCards = document.querySelectorAll(".filter-card");
   filterCards.forEach((card, index) => {
     const label = card.querySelector("p");
-    if (label && CATEGORIES[index]) {
-      label.textContent = CATEGORIES[index];
-    }
+    if (label && CATEGORIES[index]) label.textContent = CATEGORIES[index];
     card.dataset.category = CATEGORIES[index] || "All Menus";
     card.addEventListener("click", () => {
       filterCards.forEach((c) => c.classList.remove("active"));
@@ -193,12 +212,19 @@ function setupSidebar() {
   });
 
   sidebar.addEventListener("click", (e) => {
-    if (e.target.tagName === "A") {
-      sidebar.classList.remove("active");
-    } else {
-      e.stopPropagation();
-    }
+    if (e.target.tagName === "A") sidebar.classList.remove("active");
+    else e.stopPropagation();
   });
+}
+
+function setupAdminNav(profile) {
+  const adminLink = document.getElementById("admin-nav-link");
+  if (!adminLink || !profile) return;
+  if (profile.role === "admin" || profile.role === "vendor") {
+    adminLink.href = "dashboard.html";
+    adminLink.innerHTML = `<ion-icon name="shield-checkmark-outline"></ion-icon>${profile.role === "admin" ? "Admin" : "Vendor"}`;
+    adminLink.style.display = "flex";
+  }
 }
 
 async function loadFoods() {
@@ -208,6 +234,7 @@ async function loadFoods() {
   menuWrapper.innerHTML = `<p style="grid-column: 1/-1; padding: 2rem; text-align: center;">Loading menu...</p>`;
 
   try {
+    await refreshFavorites();
     const snapshot = await getDocs(collection(db, "foods"));
     allFoods = snapshot.docs.map((docSnap) => ({
       id: docSnap.id,
@@ -231,4 +258,8 @@ document.addEventListener("DOMContentLoaded", () => {
   setupSearch();
   setupSliders();
   loadFoods();
+
+  initAuthState((user, profile) => {
+    setupAdminNav(profile);
+  });
 });

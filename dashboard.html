@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Dashboard — Kibandaski</title>
+  <title>Dashboard — Kibandaski</title>
   <link rel="stylesheet" href="style.css">
   <style>
     .dash-cards {
@@ -20,56 +20,76 @@
       text-decoration: none;
       color: var(--blackcolor);
       box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-      transition: 0.3s;
-    }
-    .dash-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.12);
     }
     .dash-card ion-icon { font-size: 2.5rem; color: var(--primarycolor); }
-    .dash-card h3 { margin-top: 0.75rem; }
+    .role-banner {
+      background: var(--secondarycolor);
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      margin-top: 1rem;
+      display: inline-block;
+    }
   </style>
   <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
 </head>
 <body>
   <div class="sidebar">
     <h1 class="logo">Kibandaski</h1>
-    <div class="sidebar-menus">
-      <a href="dashboard.html"><ion-icon name="home-outline"></ion-icon>Dashboard</a>
-      <a href="admin-orders.html"><ion-icon name="receipt-outline"></ion-icon>Orders</a>
-      <a href="add-food.html"><ion-icon name="add-circle-outline"></ion-icon>Manage Foods</a>
-      <a href="index.html"><ion-icon name="storefront-outline"></ion-icon>Storefront</a>
-      <a href="settings.html"><ion-icon name="settings-outline"></ion-icon>Settings</a>
-    </div>
+    <div class="sidebar-menus" id="dashNav"></div>
     <div class="sidebarlogout">
       <a href="logout.html"><ion-icon name="log-out-outline"></ion-icon>Logout</a>
     </div>
   </div>
 
   <div class="main">
-    <div class="main-highlight" style="margin-top: 1rem;">
-      <h2>Kibandaski Admin Dashboard</h2>
-      <p>Manage your kibanda delivery platform</p>
-      <div class="dash-cards">
-        <a href="add-food.html" class="dash-card">
-          <ion-icon name="fast-food-outline"></ion-icon>
-          <h3>Foods</h3>
-          <p>Add & edit menu items</p>
-        </a>
-        <a href="admin-orders.html" class="dash-card">
-          <ion-icon name="receipt-outline"></ion-icon>
-          <h3>Orders</h3>
-          <p>View & update order status</p>
-        </a>
-        <a href="index.html" class="dash-card">
-          <ion-icon name="storefront-outline"></ion-icon>
-          <h3>Storefront</h3>
-          <p>View customer-facing site</p>
-        </a>
-      </div>
+    <div class="main-highlight" style="margin-top: 1rem; padding: 2rem;">
+      <h2 id="dashTitle">Dashboard</h2>
+      <p id="dashSubtitle"></p>
+      <div class="role-banner" id="roleBanner"></div>
+      <div class="dash-cards" id="dashCards"></div>
     </div>
   </div>
 
   <script type="module" src="js/app.js"></script>
+  <script type="module">
+    import { requireAuth } from "./js/auth-guard.js";
+    import { isAdmin, isVendor } from "./js/user-service.js";
+
+    const { profile } = await requireAuth({ roles: ["admin", "vendor"] });
+
+    document.getElementById("dashTitle").textContent = isAdmin(profile)
+      ? "Admin Dashboard"
+      : `${profile.vendorRestaurant} Vendor Portal`;
+
+    document.getElementById("dashSubtitle").textContent = isAdmin(profile)
+      ? "Manage the full Kibandaski platform"
+      : "Manage your kibanda menu and orders";
+
+    document.getElementById("roleBanner").textContent =
+      `Logged in as ${profile.role}${profile.vendorRestaurant ? " · " + profile.vendorRestaurant : ""}`;
+
+    const cards = [
+      { href: "add-food.html", icon: "fast-food-outline", title: "Manage Menu", desc: "Add & edit food items", show: true },
+      { href: "admin-orders.html", icon: "receipt-outline", title: "Orders", desc: "Update order status", show: true },
+      { href: "index.html", icon: "storefront-outline", title: "Storefront", desc: "Customer view", show: true }
+    ];
+
+    document.getElementById("dashCards").innerHTML = cards
+      .filter((c) => c.show)
+      .map((c) => `
+        <a href="${c.href}" class="dash-card">
+          <ion-icon name="${c.icon}"></ion-icon>
+          <h3>${c.title}</h3>
+          <p>${c.desc}</p>
+        </a>
+      `).join("");
+
+    document.getElementById("dashNav").innerHTML = `
+      <a href="dashboard.html"><ion-icon name="home-outline"></ion-icon>Dashboard</a>
+      <a href="add-food.html"><ion-icon name="fast-food-outline"></ion-icon>Menu</a>
+      <a href="admin-orders.html"><ion-icon name="receipt-outline"></ion-icon>Orders</a>
+      <a href="index.html"><ion-icon name="storefront-outline"></ion-icon>Storefront</a>
+    `;
+  </script>
 </body>
 </html>

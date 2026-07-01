@@ -15,7 +15,7 @@
       box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     }
     .form-container h2 { text-align: center; color: var(--primarycolor); }
-    .form-container input, .form-container button {
+    .form-container input, .form-container select, .form-container button {
       width: 100%;
       padding: 12px;
       margin: 10px 0;
@@ -38,6 +38,12 @@
       text-decoration: underline;
     }
     #authStatus { text-align: center; margin-top: 1rem; }
+    .role-hint {
+      font-size: 0.85rem;
+      color: #666;
+      margin-top: 0.5rem;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
@@ -46,7 +52,7 @@
     <div class="sidebar-menus">
       <a href="index.html"><ion-icon name="storefront-outline"></ion-icon>Home</a>
       <a href="bills.html"><ion-icon name="receipt-outline"></ion-icon>My Orders</a>
-      <a href="wallet.html"><ion-icon name="wallet-outline"></ion-icon>Wallet</a>
+      <a href="favorites.html"><ion-icon name="heart-outline"></ion-icon>Favourites</a>
       <a href="contact.html"><ion-icon name="chatbubbles-outline"></ion-icon>Contact Us</a>
     </div>
     <div class="sidebarlogout">
@@ -72,6 +78,7 @@
         <button type="submit" id="submitButton">Login</button>
       </form>
       <div class="toggle-link" id="toggleLink">Don't have an account? Register</div>
+      <p class="role-hint">Vendor accounts use pre-registered emails (e.g. mamashamim@kibandaski.com). Admin: admin@kibandaski.com</p>
       <p id="authStatus"></p>
     </div>
   </div>
@@ -83,6 +90,10 @@
     import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
     import { auth } from "./js/firebase-config.js";
     import { setUserDisplayName } from "./js/auth-utils.js";
+    import { ensureUserProfile } from "./js/user-service.js";
+
+    const params = new URLSearchParams(window.location.search);
+    const redirectTo = params.get("redirect") || "index.html";
 
     const isRegister = { value: false };
     const formTitle = document.getElementById("formTitle");
@@ -93,6 +104,23 @@
     const submitButton = document.getElementById("submitButton");
     const toggleLink = document.getElementById("toggleLink");
     const authStatus = document.getElementById("authStatus");
+
+    function afterAuth(user, name) {
+      const dest = redirectTo;
+      if (dest === "add-food.html" || dest === "admin-orders.html" || dest === "dashboard.html") {
+        window.location.href = dest;
+      } else if (user) {
+        ensureUserProfile(user, name).then((profile) => {
+          if (profile.role === "admin" || profile.role === "vendor") {
+            window.location.href = "dashboard.html";
+          } else {
+            window.location.href = redirectTo;
+          }
+        });
+      } else {
+        window.location.href = redirectTo;
+      }
+    }
 
     toggleLink.addEventListener("click", () => {
       isRegister.value = !isRegister.value;
@@ -119,19 +147,21 @@
         try {
           const cred = await createUserWithEmailAndPassword(auth, email, password);
           await setUserDisplayName(cred.user, name);
-          authStatus.textContent = "Registered successfully!";
+          await ensureUserProfile(cred.user, name);
+          authStatus.textContent = "Registered successfully! Redirecting...";
           authStatus.style.color = "green";
-          authForm.reset();
+          setTimeout(() => afterAuth(cred.user, name), 800);
         } catch (error) {
           authStatus.textContent = error.message;
           authStatus.style.color = "red";
         }
       } else {
         try {
-          await signInWithEmailAndPassword(auth, email, password);
-          authStatus.textContent = "Logged in!";
+          const cred = await signInWithEmailAndPassword(auth, email, password);
+          await ensureUserProfile(cred.user);
+          authStatus.textContent = "Logged in! Redirecting...";
           authStatus.style.color = "green";
-          window.location.href = "index.html";
+          setTimeout(() => afterAuth(cred.user, name), 500);
         } catch (error) {
           authStatus.textContent = error.message;
           authStatus.style.color = "red";

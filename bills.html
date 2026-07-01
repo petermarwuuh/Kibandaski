@@ -5,28 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>My Orders — Kibandaski</title>
   <link rel="stylesheet" href="style.css">
-  <style>
-    .order-list { padding: 1rem 0; }
-    .order-item {
-      background: #fff;
-      border-radius: 8px;
-      padding: 1.25rem;
-      margin-bottom: 1rem;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-    }
-    .order-item h4 { color: var(--primarycolor); margin-bottom: 0.5rem; }
-    .status-badge {
-      display: inline-block;
-      padding: 0.2em 0.6em;
-      border-radius: 4px;
-      font-size: 0.85em;
-      font-weight: 600;
-    }
-    .status-Pending { background: #f39c12; color: #fff; }
-    .status-Taken { background: #27ae60; color: #fff; }
-    .status-Delivered { background: #2980b9; color: #fff; }
-    .status-Denied { background: #e74c3c; color: #fff; }
-  </style>
 </head>
 <body>
   <div class="sidebar">
@@ -34,6 +12,7 @@
     <div class="sidebar-menus">
       <a href="index.html"><ion-icon name="storefront-outline"></ion-icon>Home</a>
       <a href="bills.html"><ion-icon name="receipt-outline"></ion-icon>My Orders</a>
+      <a href="favorites.html"><ion-icon name="heart-outline"></ion-icon>Favourites</a>
       <a href="wallet.html"><ion-icon name="wallet-outline"></ion-icon>Wallet</a>
       <a href="notifications.html"><ion-icon name="notifications-outline"></ion-icon>Notifications</a>
       <a href="contact.html"><ion-icon name="chatbubbles-outline"></ion-icon>Contact Us</a>
@@ -50,76 +29,74 @@
       <h2 style="padding: 1rem;">My Orders</h2>
     </div>
     <div class="main-content" style="padding: 2rem;">
-      <p>Track your recent orders and payment status.</p>
+      <p>Track your orders in real time. Status updates automatically.</p>
       <div id="orders-list" class="order-list"><p>Loading orders...</p></div>
     </div>
   </div>
 
   <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
-  <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
   <script type="module" src="js/app.js"></script>
   <script type="module">
-    import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+    import { collection, query, where, onSnapshot, or } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
     import { db } from "./js/firebase-config.js";
     import { getOrCreateCartId } from "./js/cart-utils.js";
+    import { renderTrackingStepper, formatOrderDate } from "./js/order-utils.js";
 
     const ordersList = document.getElementById("orders-list");
     const cartId = getOrCreateCartId();
     const phone = localStorage.getItem("customerPhone");
 
-    async function loadOrders() {
-      ordersList.innerHTML = "<p>Loading orders...</p>";
-      const orders = [];
-
-      try {
-        const cartQuery = query(collection(db, "orders"), where("cartId", "==", cartId));
-        const cartSnap = await getDocs(cartQuery);
-        cartSnap.forEach((docSnap) => orders.push({ id: docSnap.id, ...docSnap.data() }));
-
-        if (phone) {
-          const phoneQuery = query(collection(db, "orders"), where("phone", "==", phone));
-          const phoneSnap = await getDocs(phoneQuery);
-          phoneSnap.forEach((docSnap) => {
-            if (!orders.find((o) => o.id === docSnap.id)) {
-              orders.push({ id: docSnap.id, ...docSnap.data() });
-            }
-          });
-        }
-
-        orders.sort((a, b) => {
-          const getTime = (o) => {
-            if (o.createdAt?.seconds) return o.createdAt.seconds;
-            if (o.createdAt instanceof Date) return o.createdAt.getTime();
-            return 0;
-          };
-          return getTime(b) - getTime(a);
-        });
-
-        if (orders.length === 0) {
-          ordersList.innerHTML = `<p>No orders yet. <a href="index.html">Order something delicious!</a></p>`;
-          return;
-        }
-
-        ordersList.innerHTML = orders.map((order) => {
-          const items = (order.items || [])
-            .map((i) => `${i.name} x${i.quantity || 1}`)
-            .join(", ");
-          const total = order.total ?? order.grandTotal ?? 0;
-          return `
-            <div class="order-item">
-              <h4>Order — Ksh. ${total}</h4>
-              <p>${items || "No items"}</p>
-              <p>Payment: ${order.paymentStatus || "Pending"}</p>
-              <p>Status: <span class="status-badge status-${order.status || "Pending"}">${order.status || "Pending"}</span></p>
-            </div>
-          `;
-        }).join("");
-      } catch (err) {
-        ordersList.innerHTML = `<p>Could not load orders. ${err.message}</p>`;
-      }
+    function statusClass(status) {
+      return "status-" + (status || "Pending").replace(/ /g, "-");
     }
 
-    loadOrders();
+    function renderOrders(orders) {
+      if (!orders.length) {
+        ordersList.innerHTML = `<p>No orders yet. <a href="index.html">Order something delicious!</a></p>`;
+        return;
+      }
+
+      orders.sort((a, b) => {
+        const getTime = (o) => o.createdAt?.seconds || (o.createdAt instanceof Date ? o.createdAt.getTime() / 1000 : 0);
+        return getTime(b) - getTime(a);
+      });
+
+      ordersList.innerHTML = orders.map((order) => {
+        const items = (order.items || []).map((i) => `${i.name} x${i.quantity || 1}`).join(", ");
+        return `
+          <div class="order-item">
+            <h4>Order #${order.id.slice(0, 8)} — Ksh. ${order.total || 0}</h4>
+            <p class="order-date">${formatOrderDate(order.createdAt)}</p>
+            <p>${items || "No items"}</p>
+            <p>Payment: <strong>${order.paymentStatus || "Pending"}</strong></p>
+            ${renderTrackingStepper(order.status || "Pending")}
+            <p style="margin-top:1rem;">
+              <a href="order-track.html?id=${order.id}" class="track-link">View full tracking →</a>
+            </p>
+          </div>
+        `;
+      }).join("");
+    }
+
+    const orderMap = new Map();
+
+    function mergeAndRender() {
+      renderOrders([...orderMap.values()]);
+    }
+
+    const cartQuery = query(collection(db, "orders"), where("cartId", "==", cartId));
+    onSnapshot(cartQuery, (snap) => {
+      snap.forEach((d) => orderMap.set(d.id, { id: d.id, ...d.data() }));
+      mergeAndRender();
+    });
+
+    if (phone) {
+      const phoneQuery = query(collection(db, "orders"), where("phone", "==", phone));
+      onSnapshot(phoneQuery, (snap) => {
+        snap.forEach((d) => orderMap.set(d.id, { id: d.id, ...d.data() }));
+        mergeAndRender();
+      });
+    }
   </script>
 </body>
 </html>

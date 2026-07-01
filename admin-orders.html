@@ -3,119 +3,107 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Admin Orders — Kibandaski</title>
+  <title>Orders — Kibandaski</title>
   <link rel="stylesheet" href="style.css" />
   <style>
     .admin-page { padding: 2rem; max-width: 900px; margin: 0 auto; }
-    .admin-page h2 { color: var(--primarycolor); margin-bottom: 1.5rem; }
-    .order-card {
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      padding: 1.25rem;
-      margin: 1rem 0;
-      background: #fff;
-    }
-    .order-card h4 { margin-bottom: 0.5rem; }
-    .order-items { margin: 0.75rem 0; padding-left: 1rem; }
-    .order-actions { margin-top: 1rem; }
-    .order-actions button {
-      margin-right: 8px;
-      padding: 8px 14px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: 600;
-    }
-    .btn-taken { background: #27ae60; color: #fff; }
-    .btn-denied { background: #e74c3c; color: #fff; }
-    .btn-pending { background: #95a5a6; color: #fff; }
-    .status-badge {
-      display: inline-block;
-      padding: 0.25em 0.6em;
-      border-radius: 5px;
-      font-size: 0.85em;
-      font-weight: 600;
-    }
-    .status-Pending { background-color: #f39c12; color: white; }
-    .status-Taken { background-color: #27ae60; color: white; }
-    .status-Denied { background-color: #e74c3c; color: white; }
-    .status-Delivered { background-color: #2980b9; color: white; }
-    .back-link {
-      display: inline-block;
-      margin-bottom: 1rem;
-      color: var(--primarycolor);
-      text-decoration: none;
-      font-weight: 600;
-    }
+    .order-card { border: 1px solid #ddd; border-radius: 8px; padding: 1.25rem; margin: 1rem 0; background: #fff; }
+    .order-actions { margin-top: 1rem; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    .order-actions button { padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; color: #fff; }
+    .btn-confirmed { background: #3498db; }
+    .btn-preparing { background: #9b59b6; }
+    .btn-ontheway { background: #e67e22; }
+    .btn-delivered { background: #27ae60; }
+    .btn-denied { background: #e74c3c; }
+    .status-badge { display: inline-block; padding: 0.25em 0.6em; border-radius: 5px; font-size: 0.85em; font-weight: 600; color: #fff; }
+    .status-Pending { background: #f39c12; }
+    .status-Confirmed { background: #3498db; }
+    .status-Preparing { background: #9b59b6; }
+    .status-On-the-way { background: #e67e22; }
+    .status-Delivered { background: #27ae60; }
+    .status-Denied { background: #e74c3c; }
   </style>
 </head>
 <body>
   <div class="admin-page">
-    <a href="index.html" class="back-link">← Back to home</a>
-    <h2>Admin — Orders Management</h2>
+    <a href="dashboard.html">← Dashboard</a>
+    <h2 id="pageTitle">Orders Management</h2>
+    <p id="vendorNote"></p>
     <div id="ordersContainer"><p>Loading orders...</p></div>
   </div>
 
   <script type="module">
     import { collection, onSnapshot, orderBy, query, doc, updateDoc } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
     import { db } from "./js/firebase-config.js";
+    import { requireAuth } from "./js/auth-guard.js";
+    import { isAdmin, isVendor } from "./js/user-service.js";
+    import { orderContainsVendorItems } from "./js/order-utils.js";
 
+    const { profile } = await requireAuth({ roles: ["admin", "vendor"] });
     const ordersContainer = document.getElementById("ordersContainer");
 
-    function formatItems(items) {
-      if (!items || !items.length) return "<li>No items</li>";
-      return items
-        .map((item) => `<li>${item.name} x${item.quantity || 1} — Ksh. ${item.price}</li>`)
-        .join("");
+    document.getElementById("pageTitle").textContent = isAdmin(profile)
+      ? "Admin — All Orders"
+      : `Vendor — ${profile.vendorRestaurant} Orders`;
+
+    if (isVendor(profile)) {
+      document.getElementById("vendorNote").textContent =
+        "Showing orders that include items from your kibanda.";
+    }
+
+    const STATUS_ACTIONS = [
+      { status: "Confirmed", label: "Confirm", cls: "btn-confirmed" },
+      { status: "Preparing", label: "Preparing", cls: "btn-preparing" },
+      { status: "On the way", label: "On the way", cls: "btn-ontheway" },
+      { status: "Delivered", label: "Delivered", cls: "btn-delivered" },
+      { status: "Denied", label: "Deny", cls: "btn-denied" }
+    ];
+
+    function statusClass(status) {
+      return "status-" + (status || "Pending").replace(/ /g, "-");
     }
 
     function renderOrder(id, data) {
+      if (isVendor(profile) && !orderContainsVendorItems(data, profile.vendorRestaurant)) return;
+
       const div = document.createElement("div");
       div.className = "order-card";
-      const customerName = data.name || data.fullName || "Unknown";
-      const orderTotal = data.total ?? data.grandTotal ?? 0;
-      const paymentStatus = data.paymentStatus || "Unknown";
+      const items = (data.items || [])
+        .map((i) => `<li>${i.name} x${i.quantity || 1} — ${i.restaurant || ""}</li>`)
+        .join("");
+
+      const actions = STATUS_ACTIONS.map(
+        (a) => `<button class="${a.cls}" data-id="${id}" data-status="${a.status}">${a.label}</button>`
+      ).join("");
 
       div.innerHTML = `
-        <h4>${customerName} — ${data.phone || "No phone"}</h4>
-        <p><strong>Address:</strong> ${data.address || "Not provided"}</p>
-        <p><strong>Total:</strong> Ksh. ${orderTotal} (Delivery: Ksh. ${data.deliveryFee || 0})</p>
-        <p><strong>Payment:</strong> ${paymentStatus}</p>
-        <p><strong>Status:</strong>
-          <span class="status-badge status-${data.status || "Pending"}">${data.status || "Pending"}</span>
-        </p>
-        <ul class="order-items">${formatItems(data.items)}</ul>
-        <div class="order-actions">
-          <button class="btn-taken" data-id="${id}" data-status="Taken">Mark Taken</button>
-          <button class="btn-pending" data-id="${id}" data-status="Delivered">Mark Delivered</button>
-          <button class="btn-denied" data-id="${id}" data-status="Denied">Deny</button>
-        </div>
+        <h4>${data.name || "Customer"} — ${data.phone || ""}</h4>
+        <p><strong>Address:</strong> ${data.address || "—"}</p>
+        <p><strong>Total:</strong> Ksh. ${data.total || 0} · <strong>Payment:</strong> ${data.paymentStatus || "—"}</p>
+        <p><strong>Status:</strong> <span class="status-badge ${statusClass(data.status)}">${data.status || "Pending"}</span></p>
+        <ul>${items}</ul>
+        <div class="order-actions">${actions}</div>
       `;
       ordersContainer.appendChild(div);
     }
 
-    function loadOrders() {
-      const q = query(collection(db, "orders"), orderBy("createdAt", "desc"));
-      onSnapshot(q, (snapshot) => {
-        ordersContainer.innerHTML = "";
-        if (snapshot.empty) {
-          ordersContainer.innerHTML = "<p>No orders yet.</p>";
-          return;
-        }
-        snapshot.forEach((docSnap) => renderOrder(docSnap.id, docSnap.data()));
-        document.querySelectorAll(".order-actions button").forEach((btn) => {
-          btn.addEventListener("click", async () => {
-            const orderId = btn.dataset.id;
-            const newStatus = btn.dataset.status;
-            await updateDoc(doc(db, "orders", orderId), { status: newStatus });
-          });
-        });
-      }, (error) => {
-        ordersContainer.innerHTML = `<p style="color:red;">Failed to load orders: ${error.message}</p>`;
+    const q = query(collection(db, "orders"), orderBy("createdAt", "desc"));
+    onSnapshot(q, (snapshot) => {
+      ordersContainer.innerHTML = "";
+      let count = 0;
+      snapshot.forEach((docSnap) => {
+        const before = ordersContainer.children.length;
+        renderOrder(docSnap.id, docSnap.data());
+        if (ordersContainer.children.length > before) count++;
       });
-    }
+      if (count === 0) ordersContainer.innerHTML = "<p>No orders yet.</p>";
 
-    loadOrders();
+      document.querySelectorAll(".order-actions button").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          await updateDoc(doc(db, "orders", btn.dataset.id), { status: btn.dataset.status });
+        });
+      });
+    });
   </script>
 </body>
 </html>
