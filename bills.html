@@ -1,43 +1,102 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bills - Kibandaski Deliveries</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Orders — Kibandaski</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="sidebar">
-        <h1 class="logo">DineDash</h1>
-        <div class="sidebar-menus">
-            <a href="index.html"><ion-icon name="storefront-outline"></ion-icon>Home</a>
-            <a href="bills.html"><ion-icon name="receipt-outline"></ion-icon>Bills</a>
-            <a href="wallet.html"><ion-icon name="wallet-outline"></ion-icon>Wallet</a>
-            <a href="notifications.html"><ion-icon name="notifications-outline"></ion-icon>Notifications</a>
-            <a href="contact.html"><ion-icon name="chatbubbles-outline"></ion-icon>Contact Us</a>
-            <a href="settings.html"><ion-icon name="settings-outline"></ion-icon>Settings</a>
-        </div>
-        <div class="sidebarlogout">
-            <a href="logout.html"><ion-icon name="log-out-outline"></ion-icon>Logout</a>
-        </div>
+  <div class="sidebar">
+    <h1 class="logo">Kibandaski</h1>
+    <div class="sidebar-menus">
+      <a href="index.html"><ion-icon name="storefront-outline"></ion-icon>Home</a>
+      <a href="bills.html"><ion-icon name="receipt-outline"></ion-icon>My Orders</a>
+      <a href="favorites.html"><ion-icon name="heart-outline"></ion-icon>Favourites</a>
+      <a href="wallet.html"><ion-icon name="wallet-outline"></ion-icon>Wallet</a>
+      <a href="notifications.html"><ion-icon name="notifications-outline"></ion-icon>Notifications</a>
+      <a href="contact.html"><ion-icon name="chatbubbles-outline"></ion-icon>Contact Us</a>
+      <a href="settings.html"><ion-icon name="settings-outline"></ion-icon>Settings</a>
     </div>
-
-    <div class="main">
-        <div class="main-navbar">
-            <h2 style="padding: 1rem;">Your Bills</h2>
-        </div>
-        <div class="main-content" style="padding: 2rem;">
-            <p>Here you’ll find a summary of your recent orders and their payment status.</p>
-            <ul>
-                <li>Mandazi x2 - Ksh.20 - Paid</li>
-                <li>Chai x1 - Ksh.20 - Pending</li>
-                <li>Omena x1 - Ksh.40 - Paid</li>
-            </ul>
-        </div>
+    <div class="sidebarlogout">
+      <a href="logout.html"><ion-icon name="log-out-outline"></ion-icon>Logout</a>
     </div>
+  </div>
 
-    <!-- Ionicons -->
-    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
-    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+  <div class="main">
+    <div class="main-navbar">
+      <ion-icon class="menu-toggle" name="menu-outline"></ion-icon>
+      <h2 style="padding: 1rem;">My Orders</h2>
+    </div>
+    <div class="main-content" style="padding: 2rem;">
+      <p>Track your orders in real time. Status updates automatically.</p>
+      <div id="orders-list" class="order-list"><p>Loading orders...</p></div>
+    </div>
+  </div>
+
+  <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+  <script type="module" src="js/app.js"></script>
+  <script type="module">
+    import { collection, query, where, onSnapshot, or } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+    import { db } from "./js/firebase-config.js";
+    import { getOrCreateCartId } from "./js/cart-utils.js";
+    import { renderTrackingStepper, formatOrderDate } from "./js/order-utils.js";
+
+    const ordersList = document.getElementById("orders-list");
+    const cartId = getOrCreateCartId();
+    const phone = localStorage.getItem("customerPhone");
+
+    function statusClass(status) {
+      return "status-" + (status || "Pending").replace(/ /g, "-");
+    }
+
+    function renderOrders(orders) {
+      if (!orders.length) {
+        ordersList.innerHTML = `<p>No orders yet. <a href="index.html">Order something delicious!</a></p>`;
+        return;
+      }
+
+      orders.sort((a, b) => {
+        const getTime = (o) => o.createdAt?.seconds || (o.createdAt instanceof Date ? o.createdAt.getTime() / 1000 : 0);
+        return getTime(b) - getTime(a);
+      });
+
+      ordersList.innerHTML = orders.map((order) => {
+        const items = (order.items || []).map((i) => `${i.name} x${i.quantity || 1}`).join(", ");
+        return `
+          <div class="order-item">
+            <h4>Order #${order.id.slice(0, 8)} — Ksh. ${order.total || 0}</h4>
+            <p class="order-date">${formatOrderDate(order.createdAt)}</p>
+            <p>${items || "No items"}</p>
+            <p>Payment: <strong>${order.paymentStatus || "Pending"}</strong></p>
+            ${renderTrackingStepper(order.status || "Pending")}
+            <p style="margin-top:1rem;">
+              <a href="order-track.html?id=${order.id}" class="track-link">View full tracking →</a>
+            </p>
+          </div>
+        `;
+      }).join("");
+    }
+
+    const orderMap = new Map();
+
+    function mergeAndRender() {
+      renderOrders([...orderMap.values()]);
+    }
+
+    const cartQuery = query(collection(db, "orders"), where("cartId", "==", cartId));
+    onSnapshot(cartQuery, (snap) => {
+      snap.forEach((d) => orderMap.set(d.id, { id: d.id, ...d.data() }));
+      mergeAndRender();
+    });
+
+    if (phone) {
+      const phoneQuery = query(collection(db, "orders"), where("phone", "==", phone));
+      onSnapshot(phoneQuery, (snap) => {
+        snap.forEach((d) => orderMap.set(d.id, { id: d.id, ...d.data() }));
+        mergeAndRender();
+      });
+    }
+  </script>
 </body>
-            </html>
+</html>

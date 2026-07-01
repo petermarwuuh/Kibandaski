@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Track Order — Kibandaski</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .track-page { max-width: 700px; margin: 0 auto; padding: 2rem; }
+    .track-card { background: #fff; border-radius: 12px; padding: 2rem; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+    .track-card h2 { color: var(--primarycolor); }
+    .order-meta { margin: 1rem 0; color: #555; }
+    .live-badge {
+      display: inline-block;
+      background: #27ae60;
+      color: #fff;
+      font-size: 0.75rem;
+      padding: 0.2rem 0.6rem;
+      border-radius: 20px;
+      margin-left: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <h1 class="logo">Kibandaski</h1>
+    <div class="sidebar-menus">
+      <a href="index.html"><ion-icon name="storefront-outline"></ion-icon>Home</a>
+      <a href="bills.html"><ion-icon name="receipt-outline"></ion-icon>My Orders</a>
+      <a href="favorites.html"><ion-icon name="heart-outline"></ion-icon>Favourites</a>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="track-page">
+      <a href="bills.html">← Back to orders</a>
+      <div class="track-card" id="trackCard">
+        <p>Loading order...</p>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+  <script type="module" src="js/app.js"></script>
+  <script type="module">
+    import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+    import { db } from "./js/firebase-config.js";
+    import { renderTrackingStepper, formatOrderDate } from "./js/order-utils.js";
+
+    const params = new URLSearchParams(window.location.search);
+    const orderId = params.get("id");
+    const card = document.getElementById("trackCard");
+
+    if (!orderId) {
+      card.innerHTML = "<p>No order ID provided. <a href='bills.html'>View your orders</a></p>";
+    } else {
+      onSnapshot(doc(db, "orders", orderId), (snap) => {
+        if (!snap.exists()) {
+          card.innerHTML = "<p>Order not found.</p>";
+          return;
+        }
+        const order = snap.data();
+        const items = (order.items || [])
+          .map((i) => `<li>${i.name} x${i.quantity || 1}</li>`)
+          .join("");
+
+        card.innerHTML = `
+          <h2>Order Tracking <span class="live-badge">LIVE</span></h2>
+          <p class="order-meta">Placed: ${formatOrderDate(order.createdAt)}</p>
+          <p><strong>${order.name}</strong> · ${order.phone}</p>
+          <p>${order.address || ""}</p>
+          <p><strong>Total:</strong> Ksh. ${order.total || 0} · <strong>Payment:</strong> ${order.paymentStatus || "Pending"}</p>
+          ${renderTrackingStepper(order.status || "Pending")}
+          <h3 style="margin-top:1.5rem;">Items</h3>
+          <ul>${items}</ul>
+        `;
+      });
+    }
+  </script>
+</body>
+</html>

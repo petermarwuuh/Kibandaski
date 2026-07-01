@@ -1,30 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Logout - Kibandaski Deliveries</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Logout — Kibandaski</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="sidebar">
-        <h1 class="logo">DineDash</h1>
-        <div class="sidebar-menus">
-            <a href="home.html"><ion-icon name="storefront-outline"></ion-icon>Home</a>
-            <a href="bills.html"><ion-icon name="receipt-outline"></ion-icon>Bills</a>
-            <a href="wallet.html"><ion-icon name="wallet-outline"></ion-icon>Wallet</a>
-            <a href="notifications.html"><ion-icon name="notifications-outline"></ion-icon>Notifications</a>
-            <a href="contact.html"><ion-icon name="chatbubbles-outline"></ion-icon>Contact Us</a>
-            <a href="settings.html"><ion-icon name="settings-outline"></ion-icon>Settings</a>
-        </div>
-        <div class="sidebarlogout">
-            <a href="logout.html"><ion-icon name="log-out-outline"></ion-icon>Logout</a>
-        </div>
-    </div>
+  <div class="main" style="padding: 3rem; margin-left: 0; text-align: center;">
+    <h1 id="status">Logging out...</h1>
+    <p>Thank you for using Kibandaski. Karibu tena!</p>
+    <p><a href="index.html">Return to home</a></p>
+  </div>
 
-    <div class="main">
-        <h1>You have been logged out</h1>
-        <p>Thank you for using DineDash. We hope to see you again soon!</p>
-    </div>
+  <script type="module">
+    import { signOut } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
+    import { auth } from "./js/firebase-config.js";
+
+    try {
+      await signOut(auth);
+    } catch {
+      // User may not have been logged in
+    }
+    document.getElementById("status").textContent = "You have been logged out";
+  </script>
 </body>
 </html>

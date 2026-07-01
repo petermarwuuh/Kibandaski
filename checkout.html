@@ -1,14 +1,12 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Checkout - Kibandaski Deliveries</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Checkout — Kibandaski</title>
   <link rel="stylesheet" href="style.css" />
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f2f2f2;
-      padding: 20px;
-    }
+    body { padding: 20px; }
     .order-box {
       max-width: 700px;
       background: #fff;
@@ -17,37 +15,22 @@
       border-radius: 12px;
       box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     }
-    .order-box h2 {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-    .order-box label {
-      font-weight: bold;
-    }
-    .order-box input {
+    .order-box h2 { text-align: center; margin-bottom: 20px; color: var(--primarycolor); }
+    .order-box label { font-weight: bold; display: block; margin-top: 0.5rem; }
+    .order-box input, .order-box textarea {
       width: 100%;
       padding: 10px;
-      margin: 10px 0 20px;
+      margin: 8px 0 16px;
       border: 1px solid #ccc;
       border-radius: 6px;
+      font-family: inherit;
     }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-bottom: 20px;
-    }
-    table th, table td {
-      padding: 10px;
-      border: 1px solid #ddd;
-      text-align: left;
-    }
-    .totals {
-      margin-top: 20px;
-      font-size: 16px;
-    }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    table th, table td { padding: 10px; border: 1px solid #ddd; text-align: left; }
+    .totals { margin-top: 20px; font-size: 16px; }
     .place-order-btn {
       padding: 15px;
-      background: green;
+      background: var(--primarycolor);
       color: white;
       font-size: 16px;
       border: none;
@@ -55,109 +38,116 @@
       cursor: pointer;
       width: 100%;
     }
-    .place-order-btn:disabled {
-      background: #aaa;
-      cursor: not-allowed;
+    .place-order-btn:disabled { background: #aaa; cursor: not-allowed; }
+    .back-link {
+      display: inline-block;
+      margin-bottom: 1rem;
+      color: var(--primarycolor);
+      text-decoration: none;
+      font-weight: 600;
     }
   </style>
   <script src="https://js.paystack.co/v1/inline.js"></script>
 </head>
 <body>
   <div class="order-box">
-    <h2>Checkout</h2><label for="customerName">Your Name</label>
-<input type="text" id="customerName" placeholder="Enter your name" required />
+    <a href="cart.html" class="back-link">← Back to cart</a>
+    <h2>Checkout</h2>
 
-<label for="customerPhone">Phone Number</label>
-<input type="tel" id="customerPhone" placeholder="e.g. 0712345678 or 0112345678" required />
+    <label for="customerName">Your Name</label>
+    <input type="text" id="customerName" placeholder="Enter your name" required />
 
-<h3>Order Summary</h3>
-<div id="cart-details">Loading cart...</div>
+    <label for="customerPhone">Phone Number (M-Pesa)</label>
+    <input type="tel" id="customerPhone" placeholder="e.g. 0712345678" required />
 
-<button class="place-order-btn" onclick="placeOrder()">Place Order</button>
+    <label for="customerAddress">Delivery Address</label>
+    <textarea id="customerAddress" rows="2" placeholder="Estate, building, or landmark" required></textarea>
 
-  </div>  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
-    import {
-      getFirestore, doc, getDoc, addDoc, collection
-    } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+    <h3>Order Summary</h3>
+    <div id="cart-details">Loading cart...</div>
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyAHhmbgDA_D13LcnEWgtr5Unu7uihBpGPE",
-      authDomain: "food-ae7ff.firebaseapp.com",
-      projectId: "food-ae7ff",
-      storageBucket: "food-ae7ff.appspot.com",
-      messagingSenderId: "1058214228504",
-      appId: "1:1058214228504:web:f1f059be00c9aeaf7cc96d"
-    };
+    <button class="place-order-btn" id="place-order-btn">Pay with M-Pesa</button>
+  </div>
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+  <script type="module">
+    import { doc, getDoc, addDoc, collection, updateDoc } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+    import { db } from "./js/firebase-config.js";
+    import { getOrCreateCartId } from "./js/cart-utils.js";
 
-    const cartId = localStorage.getItem("cartId");
+    const cartId = getOrCreateCartId();
     let cartItems = [];
     let subtotal = Number(localStorage.getItem("subtotal")) || 0;
     let deliveryFee = Number(localStorage.getItem("deliveryFee")) || 0;
     let total = Number(localStorage.getItem("grandTotal")) || 0;
+
+    const savedName = localStorage.getItem("userName");
+    if (savedName) document.getElementById("customerName").value = savedName;
 
     const displayCart = async () => {
       const cartRef = doc(db, "carts", cartId);
       const cartSnap = await getDoc(cartRef);
       const details = document.getElementById("cart-details");
 
-      if (cartSnap.exists()) {
-        const data = cartSnap.data();
-        cartItems = data.items || [];
-
-        let table = `<table>
-                      <thead><tr><th>Item</th><th>Qty</th><th>Price</th></tr></thead><tbody>`;
-        cartItems.forEach(item => {
-          table += `<tr>
-                      <td>${item.name}</td>
-                      <td>${item.quantity || 1}</td>
-                      <td>Ksh. ${item.price}</td>
-                    </tr>`;
-        });
-        table += `</tbody></table>`;
-
-        table += `<div class="totals">
-                    Subtotal: Ksh. ${subtotal}<br>
-                    Delivery Fee: Ksh. ${deliveryFee}<br>
-                    <strong>Total: Ksh. ${total}</strong>
-                  </div>`;
-
-        details.innerHTML = table;
-      } else {
-        details.innerHTML = "Cart not found.";
-      }
-    };
-
-    window.addEventListener("DOMContentLoaded", displayCart);
-
-    window.placeOrder = async () => {
-      const name = document.getElementById("customerName").value.trim();
-      const phone = document.getElementById("customerPhone").value.trim();
-
-      const phoneRegex = /^(07\d{8}|01\d{8})$/;
-      if (!name || !phoneRegex.test(phone)) {
-        alert("Please enter a valid name and Kenyan phone number (07... or 01...).");
+      if (!cartSnap.exists() || !(cartSnap.data().items || []).length) {
+        details.innerHTML = `<p>Your cart is empty. <a href="index.html">Browse menu</a></p>`;
+        document.getElementById("place-order-btn").disabled = true;
         return;
       }
+
+      cartItems = cartSnap.data().items || [];
+      subtotal = cartItems.reduce((sum, item) => sum + Number(item.price) * (item.quantity || 1), 0);
+      deliveryFee = Number(localStorage.getItem("deliveryFee")) || 15;
+      total = subtotal + deliveryFee;
+
+      let table = `<table>
+        <thead><tr><th>Item</th><th>Qty</th><th>Price</th></tr></thead><tbody>`;
+      cartItems.forEach((item) => {
+        table += `<tr>
+          <td>${item.name}</td>
+          <td>${item.quantity || 1}</td>
+          <td>Ksh. ${Number(item.price) * (item.quantity || 1)}</td>
+        </tr>`;
+      });
+      table += `</tbody></table>`;
+      table += `<div class="totals">
+        Subtotal: Ksh. ${subtotal}<br>
+        Delivery Fee: Ksh. ${deliveryFee}<br>
+        <strong>Total: Ksh. ${total}</strong>
+      </div>`;
+      details.innerHTML = table;
+    };
+
+    document.getElementById("place-order-btn").addEventListener("click", async () => {
+      const name = document.getElementById("customerName").value.trim();
+      const phone = document.getElementById("customerPhone").value.trim();
+      const address = document.getElementById("customerAddress").value.trim();
+      const phoneRegex = /^(07\d{8}|01\d{8})$/;
+
+      if (!name || !phoneRegex.test(phone) || !address) {
+        alert("Please enter a valid name, Kenyan phone number (07... or 01...), and delivery address.");
+        return;
+      }
+
+      localStorage.setItem("userName", name);
+      localStorage.setItem("customerPhone", phone);
 
       const newOrder = {
         cartId,
         name,
         phone,
+        address,
         items: cartItems,
         subtotal,
         deliveryFee,
         total,
         status: "Pending",
+        paymentStatus: "Awaiting",
         createdAt: new Date()
       };
 
-      const button = document.querySelector(".place-order-btn");
+      const button = document.getElementById("place-order-btn");
       button.disabled = true;
-      button.textContent = "Placing order...";
+      button.textContent = "Processing...";
 
       try {
         const orderRef = await addDoc(collection(db, "orders"), newOrder);
@@ -171,37 +161,42 @@
           ref: orderId,
           metadata: {
             custom_fields: [
-              {
-                display_name: name,
-                variable_name: "customer_name",
-                value: name
-              }
+              { display_name: "Customer", variable_name: "customer_name", value: name },
+              { display_name: "Address", variable_name: "address", value: address }
             ]
           },
-          callback: async function(response) {
-            alert("Payment complete! Verifying...");
-
+          callback: async function (response) {
             try {
-              const verify = await fetch(`https://us-central1-food-ae7ff.cloudfunctions.net/verifyPayment?reference=${response.reference}`);
+              await updateDoc(doc(db, "orders", orderId), {
+                paymentStatus: "Paid",
+                paystackRef: response.reference
+              });
+              const verify = await fetch(
+                `https://us-central1-food-ae7ff.cloudfunctions.net/verifyPayment?reference=${response.reference}`
+              );
               const resText = await verify.text();
-              alert(resText);
+              alert("Payment successful! " + resText);
+              window.location.href = `order-track.html?id=${orderId}`;
             } catch (err) {
-              alert("Verification failed: " + err.message);
+              alert("Payment received but verification failed: " + err.message);
             }
           },
-          onClose: function() {
-            alert("Transaction cancelled.");
+          onClose: function () {
+            alert("Payment cancelled. Your order is saved as pending.");
+            button.disabled = false;
+            button.textContent = "Pay with M-Pesa";
           }
         });
 
         handler.openIframe();
-
       } catch (error) {
-        alert("Error placing order or sending payment: " + error.message);
+        alert("Error placing order: " + error.message);
+        button.disabled = false;
+        button.textContent = "Pay with M-Pesa";
       }
+    });
 
-      button.disabled = false;
-      button.textContent = "Place Order";
-    };
-  </script></body>
-  </html>
+    displayCart();
+  </script>
+</body>
+</html>

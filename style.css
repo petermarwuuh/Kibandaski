@@ -315,6 +315,156 @@ body {
   background-color: var(--whitecolor);
 }
 
+.filter-card.active {
+  background-color: var(--primarycolor);
+  color: var(--whitecolor);
+}
+
+.filter-card.active .filter-icon {
+  background-color: var(--whitecolor);
+}
+
+.vendor-bar {
+  margin: 1rem 0;
+  padding: 1.5rem 2%;
+  background-color: var(--whitecolor);
+  border-radius: 8px;
+}
+
+.vendor-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.vendor-chip {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  background-color: var(--softgreencolor);
+  color: var(--primarycolor);
+  border-radius: 50px;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+  transition: 0.3s;
+}
+
+.vendor-chip:hover {
+  background-color: var(--primarycolor);
+  color: var(--whitecolor);
+}
+
+/* Favourites */
+.fav-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #ccc;
+  align-self: flex-end;
+  padding: 0.25rem;
+}
+.fav-btn.active,
+.fav-btn.active ion-icon {
+  color: #e74c3c;
+}
+.rating-count {
+  font-size: 0.8rem;
+  color: var(--darkgreycolor);
+}
+
+/* Order tracking stepper */
+.order-list { padding: 1rem 0; }
+.order-item {
+  background: #fff;
+  border-radius: 8px;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+.order-item h4 { color: var(--primarycolor); margin-bottom: 0.5rem; }
+.order-date { font-size: 0.85rem; color: #888; margin-bottom: 0.5rem; }
+.track-link { color: var(--primarycolor); font-weight: 600; text-decoration: none; }
+
+.track-stepper {
+  display: flex;
+  justify-content: space-between;
+  margin: 1.5rem 0 0.5rem;
+  position: relative;
+  gap: 0.25rem;
+}
+.track-stepper::before {
+  content: "";
+  position: absolute;
+  top: 10px;
+  left: 5%;
+  right: 5%;
+  height: 3px;
+  background: #e0e0e0;
+  z-index: 0;
+}
+.track-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  position: relative;
+  z-index: 1;
+}
+.track-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #e0e0e0;
+  border: 3px solid #fff;
+  margin-bottom: 0.5rem;
+}
+.track-step.done .track-dot,
+.track-step.active .track-dot {
+  background: var(--primarycolor);
+}
+.track-step.active .track-dot {
+  box-shadow: 0 0 0 3px var(--softgreencolor);
+}
+.track-label {
+  font-size: 0.65rem;
+  text-align: center;
+  color: #888;
+  max-width: 60px;
+}
+.track-step.done .track-label,
+.track-step.active .track-label {
+  color: var(--primarycolor);
+  font-weight: 600;
+}
+.track-denied {
+  color: #e74c3c;
+  font-weight: 600;
+  margin-top: 1rem;
+}
+
+/* Rating form */
+.rating-form { margin: 1.5rem 0; }
+.star-input { font-size: 2rem; cursor: pointer; color: #ddd; }
+.star-input.selected { color: gold; }
+.rating-form textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  margin: 0.75rem 0;
+  font-family: inherit;
+}
+.rating-form button {
+  background: var(--primarycolor);
+  color: #fff;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
 .divider {
   margin: 1rem 0;
   height: 1px;

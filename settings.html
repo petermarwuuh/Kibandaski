@@ -1,30 +1,76 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Settings - Kibandaski Deliveries</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings — Kibandaski</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .settings-card {
+      background: #fff;
+      padding: 2rem;
+      border-radius: 8px;
+      max-width: 500px;
+      margin-top: 1rem;
+    }
+    .settings-card label { display: block; font-weight: 600; margin: 1rem 0 0.5rem; }
+    .settings-card input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    .settings-card button {
+      margin-top: 1.5rem;
+      padding: 10px 20px;
+      background: var(--primarycolor);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+  </style>
 </head>
 <body>
-    <div class="sidebar">
-        <h1 class="logo">DineDash</h1>
-        <div class="sidebar-menus">
-            <a href="home.html"><ion-icon name="storefront-outline"></ion-icon>Home</a>
-            <a href="bills.html"><ion-icon name="receipt-outline"></ion-icon>Bills</a>
-            <a href="wallet.html"><ion-icon name="wallet-outline"></ion-icon>Wallet</a>
-            <a href="notifications.html"><ion-icon name="notifications-outline"></ion-icon>Notifications</a>
-            <a href="contact.html"><ion-icon name="chatbubbles-outline"></ion-icon>Contact Us</a>
-            <a href="settings.html"><ion-icon name="settings-outline"></ion-icon>Settings</a>
-        </div>
-        <div class="sidebarlogout">
-            <a href="logout.html"><ion-icon name="log-out-outline"></ion-icon>Logout</a>
-        </div>
+  <div class="sidebar">
+    <h1 class="logo">Kibandaski</h1>
+    <div class="sidebar-menus">
+      <a href="index.html"><ion-icon name="storefront-outline"></ion-icon>Home</a>
+      <a href="bills.html"><ion-icon name="receipt-outline"></ion-icon>My Orders</a>
+      <a href="wallet.html"><ion-icon name="wallet-outline"></ion-icon>Wallet</a>
+      <a href="notifications.html"><ion-icon name="notifications-outline"></ion-icon>Notifications</a>
+      <a href="contact.html"><ion-icon name="chatbubbles-outline"></ion-icon>Contact Us</a>
+      <a href="settings.html"><ion-icon name="settings-outline"></ion-icon>Settings</a>
     </div>
+    <div class="sidebarlogout">
+      <a href="logout.html"><ion-icon name="log-out-outline"></ion-icon>Logout</a>
+    </div>
+  </div>
 
-    <div class="main">
-        <h1>Settings</h1>
-        <p>Manage your account settings and preferences here.</p>
+  <div class="main" style="padding: 2rem;">
+    <h1>Settings</h1>
+    <div class="settings-card">
+      <label for="userName">Display Name</label>
+      <input type="text" id="userName" placeholder="Your name" />
+      <label for="userPhone">Phone Number</label>
+      <input type="tel" id="userPhone" placeholder="07XXXXXXXX" />
+      <button id="saveBtn">Save Preferences</button>
+      <p id="saveStatus" style="margin-top:1rem;"></p>
     </div>
+  </div>
+
+  <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+  <script type="module" src="js/app.js"></script>
+  <script type="module">
+    document.getElementById("userName").value = localStorage.getItem("userName") || "";
+    document.getElementById("userPhone").value = localStorage.getItem("customerPhone") || "";
+
+    document.getElementById("saveBtn").addEventListener("click", () => {
+      localStorage.setItem("userName", document.getElementById("userName").value.trim());
+      localStorage.setItem("customerPhone", document.getElementById("userPhone").value.trim());
+      document.getElementById("saveStatus").textContent = "Preferences saved!";
+      document.getElementById("saveStatus").style.color = "green";
+    });
+  </script>
 </body>
 </html>

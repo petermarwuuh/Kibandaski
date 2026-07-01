@@ -3,179 +3,118 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Food Detail</title>
+  <title>Food Detail — Kibandaski</title>
   <link rel="stylesheet" href="style.css" />
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f5f5f5;
-      margin: 0;
-      padding: 20px;
-    }
-
-    .container {
-      max-width: 900px;
-      margin: auto;
-    }
-
-    /* Main Food Section */
+    .food-detail-page { max-width: 900px; margin: 0 auto; padding: 1rem; }
     .main-food {
-      background: #fff;
-      border-radius: 10px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-      padding: 20px;
-      margin-bottom: 40px;
+      background: #fff; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      padding: 20px; margin-bottom: 2rem;
     }
-
-    .main-food img {
-      width: 100%;
-      max-height: 300px;
-      object-fit: cover;
-      border-radius: 8px;
+    .main-food img { width: 100%; max-height: 300px; object-fit: cover; border-radius: 8px; }
+    .main-food h1 { margin-top: 20px; font-size: 26px; }
+    .main-food .desc { color: #555; margin: 10px 0; }
+    .main-food .price { font-size: 20px; font-weight: bold; color: #e67e22; }
+    .buttons { margin-top: 20px; }
+    .btn { padding: 10px 16px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; margin-right: 10px; }
+    .btn-primary { background-color: #27ae60; color: white; }
+    .btn-secondary { background-color: #3498db; color: white; }
+    .btn-fav { background: #fff; border: 2px solid #e74c3c; color: #e74c3c; }
+    .btn-fav.active { background: #e74c3c; color: #fff; }
+    .other-vendors, .rating-section {
+      background: #fff; padding: 20px; border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1); margin-bottom: 2rem;
     }
-
-    .main-food h1 {
-      margin-top: 20px;
-      font-size: 26px;
-    }
-
-    .main-food .desc {
-      color: #555;
-      margin: 10px 0;
-    }
-
-    .main-food .price {
-      font-size: 20px;
-      font-weight: bold;
-      color: #e67e22;
-    }
-
-    .buttons {
-      margin-top: 20px;
-    }
-
-    .btn {
-      padding: 10px 16px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 14px;
-      margin-right: 10px;
-    }
-
-    .btn-primary {
-      background-color: #27ae60;
-      color: white;
-    }
-
-    .btn-secondary {
-      background-color: #3498db;
-      color: white;
-    }
-
-    /* Other Vendors Section */
-    .other-vendors {
-      background: #fff;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    }
-
-    .other-vendors h2 {
-      margin-bottom: 20px;
-    }
-
     .vendor-card {
-      display: flex;
-      gap: 15px;
-      background: #fafafa;
-      border-radius: 8px;
-      padding: 10px;
-      margin-bottom: 15px;
-      cursor: pointer;
-      transition: background 0.2s ease;
+      display: flex; gap: 15px; background: #fafafa; border-radius: 8px;
+      padding: 10px; margin-bottom: 15px; cursor: pointer;
     }
-
-    .vendor-card:hover {
-      background: #f0f0f0;
-    }
-
-    .vendor-card img {
-      width: 120px;
-      height: 100px;
-      object-fit: cover;
-      border-radius: 6px;
-    }
-
-    .vendor-info {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-    }
-
-    .vendor-info p {
-      margin: 4px 0;
-    }
-
-    .vendor-info .price {
-      color: #e67e22;
-      font-weight: bold;
-    }
+    .vendor-card img { width: 120px; height: 100px; object-fit: cover; border-radius: 6px; }
+    .back-link { display: inline-block; margin-bottom: 1rem; color: var(--primarycolor); text-decoration: none; font-weight: 600; }
+    .food-rating { font-size: 1.25rem; color: gold; margin: 0.5rem 0; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <!-- Main Food Section -->
+  <div class="food-detail-page">
+    <a href="index.html" class="back-link">← Back to menu</a>
     <div class="main-food">
       <img id="food-img" src="" alt="Food Image" />
       <h1 id="food-title"></h1>
+      <p class="food-rating" id="food-rating"></p>
       <p class="desc" id="food-desc"></p>
       <p class="price" id="food-price"></p>
+      <p class="desc" id="food-vendor"></p>
       <div class="buttons">
         <button id="add-to-cart-btn" class="btn btn-primary">Add to Cart</button>
-        <button onclick="location.href='checkout.html'" class="btn btn-secondary">Checkout</button>
+        <button id="fav-btn" class="btn btn-fav">♥ Save</button>
+        <button onclick="location.href='cart.html'" class="btn btn-secondary">View Cart</button>
       </div>
     </div>
 
-    <!-- Other Restaurants Section -->
+    <div class="rating-section">
+      <h2>Rate this food</h2>
+      <div class="star-input" id="starInput"></div>
+      <div class="rating-form">
+        <textarea id="ratingComment" rows="2" placeholder="Optional comment..."></textarea>
+        <button id="submitRating">Submit Rating</button>
+        <p id="ratingStatus"></p>
+      </div>
+    </div>
+
     <div class="other-vendors">
-      <h2>Other restaurants selling this food:</h2>
+      <h2>Other vendors selling this food</h2>
       <div id="vendors-list"></div>
     </div>
   </div>
 
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
-    import {
-      getFirestore, doc, getDoc, collection, getDocs, query, where, setDoc, updateDoc, arrayUnion
-    } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+    import { doc, getDoc, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+    import { db } from "./js/firebase-config.js";
+    import { getOrCreateCartId, addItemToCart } from "./js/cart-utils.js";
+    import { toggleFavorite, isFavorite } from "./js/favorites-utils.js";
+    import { getFoodRating, getUserRating, submitRating, renderStars } from "./js/ratings-utils.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyAHhmbgDA_D13LcnEWgtr5Unu7uihBpGPE",
-      authDomain: "food-ae7ff.firebaseapp.com",
-      projectId: "food-ae7ff",
-      storageBucket: "food-ae7ff.appspot.com",
-      messagingSenderId: "1058214228504",
-      appId: "1:1058214228504:web:f1f059be00c9aeaf7cc96d"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-    let cartId = localStorage.getItem("cartId");
-    if (!cartId) {
-      cartId = "cart_" + Math.random().toString(36).substring(2);
-      localStorage.setItem("cartId", cartId);
-    }
-
+    const cartId = getOrCreateCartId();
     const params = new URLSearchParams(window.location.search);
     const foodId = params.get("id");
     let currentFood = null;
+    let selectedRating = 0;
+
+    const starInput = document.getElementById("starInput");
+    for (let i = 1; i <= 5; i++) {
+      const star = document.createElement("span");
+      star.textContent = "★";
+      star.dataset.value = i;
+      star.addEventListener("click", () => {
+        selectedRating = i;
+        [...starInput.children].forEach((s, idx) => {
+          s.classList.toggle("selected", idx < i);
+        });
+      });
+      starInput.appendChild(star);
+    }
+
+    async function updateRatingDisplay() {
+      const { avgRating, ratingCount } = await getFoodRating(foodId);
+      document.getElementById("food-rating").textContent =
+        `${renderStars(avgRating)} ${avgRating} (${ratingCount} reviews)`;
+
+      const userRating = await getUserRating(foodId);
+      if (userRating) {
+        selectedRating = userRating;
+        [...starInput.children].forEach((s, idx) => {
+          s.classList.toggle("selected", idx < userRating);
+        });
+      }
+    }
 
     const loadFoodDetail = async () => {
-      const foodRef = doc(db, "foods", foodId);
-      const foodSnap = await getDoc(foodRef);
+      if (!foodId) {
+        document.getElementById("food-title").innerText = "No food selected";
+        return;
+      }
 
+      const foodSnap = await getDoc(doc(db, "foods", foodId));
       if (!foodSnap.exists()) {
         document.getElementById("food-title").innerText = "Food not found";
         return;
@@ -188,61 +127,76 @@
       document.getElementById("food-title").innerText = food.name;
       document.getElementById("food-desc").innerText = food.description;
       document.getElementById("food-price").innerText = "Ksh. " + food.price;
+      document.getElementById("food-vendor").innerText = "Sold by " + (food.restaurant || "Local Kibanda");
 
+      const favBtn = document.getElementById("fav-btn");
+      if (await isFavorite(foodId)) {
+        favBtn.classList.add("active");
+        favBtn.textContent = "♥ Saved";
+      }
+
+      await updateRatingDisplay();
       loadOtherVendors(food.name);
     };
+
+    document.getElementById("fav-btn").addEventListener("click", async () => {
+      if (!currentFood) return;
+      const added = await toggleFavorite(currentFood);
+      const btn = document.getElementById("fav-btn");
+      btn.classList.toggle("active", added);
+      btn.textContent = added ? "♥ Saved" : "♥ Save";
+    });
+
+    document.getElementById("submitRating").addEventListener("click", async () => {
+      if (!selectedRating) {
+        document.getElementById("ratingStatus").textContent = "Please select a star rating.";
+        return;
+      }
+      try {
+        await submitRating(foodId, selectedRating, document.getElementById("ratingComment").value.trim());
+        document.getElementById("ratingStatus").textContent = "Thank you for your rating!";
+        document.getElementById("ratingStatus").style.color = "green";
+        await updateRatingDisplay();
+      } catch (err) {
+        document.getElementById("ratingStatus").textContent = err.message;
+        document.getElementById("ratingStatus").style.color = "red";
+      }
+    });
 
     const loadOtherVendors = async (foodName) => {
       const q = query(collection(db, "foods"), where("name", "==", foodName));
       const querySnapshot = await getDocs(q);
       const list = document.getElementById("vendors-list");
       list.innerHTML = "";
-
-      querySnapshot.forEach(docSnap => {
-        if (docSnap.id === foodId) return; // skip current food
-
+      let found = false;
+      querySnapshot.forEach((docSnap) => {
+        if (docSnap.id === foodId) return;
+        found = true;
         const food = docSnap.data();
         const card = document.createElement("div");
-        card.classList.add("vendor-card");
-
+        card.className = "vendor-card";
         card.innerHTML = `
           <img src="${food.imageUrl}" alt="Food image" />
-          <div class="vendor-info">
+          <div>
             <p><strong>${food.restaurant}</strong></p>
             <p class="price">Ksh. ${food.price}</p>
           </div>
         `;
-
         card.addEventListener("click", () => {
           location.href = `food-detail.html?id=${docSnap.id}`;
         });
-
         list.appendChild(card);
       });
+      if (!found) list.innerHTML = "<p>No other vendors found for this item.</p>";
     };
 
-    const addToCart = async () => {
+    document.getElementById("add-to-cart-btn").addEventListener("click", async () => {
       if (!currentFood) return;
-      const cartRef = doc(db, "carts", cartId);
-      const cartSnap = await getDoc(cartRef);
-
-      if (cartSnap.exists()) {
-        await updateDoc(cartRef, {
-          items: arrayUnion(currentFood)
-        });
-      } else {
-        await setDoc(cartRef, {
-          items: [currentFood]
-        });
-      }
-
-      alert("✅ Added to cart!");
-    };
-
-    document.addEventListener("DOMContentLoaded", () => {
-      loadFoodDetail();
-      document.getElementById("add-to-cart-btn").addEventListener("click", addToCart);
+      await addItemToCart(cartId, currentFood);
+      alert("Added to cart!");
     });
+
+    loadFoodDetail();
   </script>
 </body>
 </html>
