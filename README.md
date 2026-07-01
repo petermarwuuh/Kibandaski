@@ -11,9 +11,22 @@ Kibandaski is a Kenyan food delivery web app that connects customers with neighb
 - View vendor-specific menus
 - Shopping cart with quantity controls
 - M-Pesa checkout via Paystack
-- Order tracking (My Orders)
-- Admin panel for food CRUD and order management
+- **Live order tracking** with status stepper (Pending → Confirmed → Preparing → On the way → Delivered)
+- **Favourites** — save foods locally or to your account
+- **Ratings & reviews** — rate dishes 1–5 stars
+- **Role-based access** — admin, vendor, and customer accounts
+- **Vendor portal** — vendors manage only their own menu and orders
 - Firebase Authentication (login/register)
+
+### User roles
+
+| Role | Email example | Access |
+|------|---------------|--------|
+| Admin | `admin@kibandaski.com` | Full platform: all foods, all orders |
+| Vendor | `mamashamim@kibandaski.com` | Own kibanda menu + related orders |
+| Customer | any other email | Browse, order, track, rate, favourite |
+
+Vendor emails are mapped in `js/roles-config.js`.
 
 ## Tech Stack
 
